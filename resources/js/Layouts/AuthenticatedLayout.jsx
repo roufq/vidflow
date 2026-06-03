@@ -67,7 +67,7 @@ export default function AuthenticatedLayout({ header, children }) {
                 {/* Background glow effects */}
                 <div className="absolute top-[-20%] right-[-10%] h-[600px] w-[600px] rounded-full bg-indigo-600/10 blur-[120px] pointer-events-none" />
                 
-                <header className="h-16 flex items-center justify-between px-6 border-b border-white/10 bg-[#0a0a0a]/80 backdrop-blur-md z-10 sticky top-0">
+                <header className="h-16 flex items-center justify-between px-6 border-b border-white/10 bg-[#0a0a0a]/80 backdrop-blur-md z-30 sticky top-0">
                     <div className="flex items-center gap-3">
                         {/* Mobile Menu Toggle (future) */}
                         <button className="md:hidden text-slate-400 hover:text-white transition-colors">
