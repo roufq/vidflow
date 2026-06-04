@@ -112,26 +112,27 @@ class PlatformConnectionController extends Controller
             }
             
             $socialUser = $driver->user();
+
+            PlatformConnection::updateOrCreate(
+                [
+                    'user_id' => auth()->id(), 
+                    'platform' => $platform,
+                    'platform_user_id' => $socialUser->getId() ?? 'unknown_'.uniqid()
+                ],
+                [
+                    'platform_username' => $socialUser->getNickname() ?? $socialUser->getName() ?? 'Akun ' . ucfirst($platform),
+                    'access_token' => Crypt::encryptString($socialUser->token),
+                    'refresh_token' => $socialUser->refreshToken ? Crypt::encryptString($socialUser->refreshToken) : null,
+                    'token_expires_at' => now()->addSeconds($socialUser->expiresIn ?? 3600),
+                ]
+            );
+
+            return redirect()->route('connections')->with('success', 'Berhasil menghubungkan akun ' . ucfirst($platform));
+            
         } catch (\Exception $e) {
             \Illuminate\Support\Facades\Log::error('Socialite Error: ' . $e->getMessage(), ['exception' => $e]);
             return redirect()->route('connections')->with('error', 'Koneksi gagal: ' . $e->getMessage());
         }
-
-        PlatformConnection::updateOrCreate(
-            [
-                'user_id' => auth()->id(), 
-                'platform' => $platform,
-                'platform_user_id' => $socialUser->getId()
-            ],
-            [
-                'platform_username' => $socialUser->getNickname() ?? $socialUser->getName(),
-                'access_token' => Crypt::encryptString($socialUser->token),
-                'refresh_token' => $socialUser->refreshToken ? Crypt::encryptString($socialUser->refreshToken) : null,
-                'token_expires_at' => now()->addSeconds($socialUser->expiresIn ?? 3600),
-            ]
-        );
-
-        return redirect()->route('connections')->with('success', 'Berhasil menghubungkan akun ' . ucfirst($platform));
     }
 
     public function disconnect($id)
