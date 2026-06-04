@@ -52,6 +52,7 @@ class PlatformConnectionController extends Controller
         if ($credential) {
             Config::set("services.{$driverName}.client_id", $credential->app_id);
             Config::set("services.{$driverName}.client_secret", $credential->app_secret);
+            Config::set("services.{$driverName}.redirect", route('platform.callback', ['platform' => $platform]));
         } else {
             // Force them to input it for ALL platforms
             abort(403, 'Anda harus mengatur App ID / Client ID dan Secret untuk ' . ucfirst($platform) . ' terlebih dahulu sebelum menghubungkan akun.');
@@ -94,12 +95,25 @@ class PlatformConnectionController extends Controller
             $driverName = $this->setDynamicConfig($platform);
             $driver = Socialite::driver($driverName);
             
-            if ($platform === 'facebook' || $platform === 'instagram') {
-                $driver->redirectUrl(route('platform.callback', ['platform' => $platform]));
+            if ($platform === 'youtube') {
+                $driver->scopes(['https://www.googleapis.com/auth/youtube.upload', 'https://www.googleapis.com/auth/youtube.readonly']);
+                $driver->with(['access_type' => 'offline', 'prompt' => 'consent']);
+            } elseif ($platform === 'tiktok') {
+                $driver->scopes(['video.upload', 'video.publish', 'user.info.basic']);
+            } elseif ($platform === 'facebook' || $platform === 'instagram') {
+                $driver->scopes([
+                    'pages_show_list', 
+                    'pages_read_engagement',
+                    'pages_manage_posts',       
+                    'instagram_basic',          
+                    'instagram_content_publish',
+                    'business_management'
+                ])->with(['auth_type' => 'rerequest']);
             }
             
             $socialUser = $driver->user();
         } catch (\Exception $e) {
+            \Illuminate\Support\Facades\Log::error('Socialite Error: ' . $e->getMessage(), ['exception' => $e]);
             return redirect()->route('connections')->with('error', 'Koneksi gagal: ' . $e->getMessage());
         }
 
