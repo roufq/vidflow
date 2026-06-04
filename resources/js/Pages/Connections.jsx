@@ -107,7 +107,18 @@ export default function Connections({ connections, credentials = {}, flash }) {
                                         placeholder="Masukkan Secret"
                                     />
                                 </div>
-                                <button type="submit" className="w-full py-2 bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-bold rounded-lg transition-colors">
+                                <div className="mt-4 pt-3 border-t border-white/5">
+                                    <label className="block text-xs font-bold text-slate-400 mb-2">OAuth Redirect / Callback URI:</label>
+                                    <div className="flex items-center gap-2">
+                                        <code className="flex-1 bg-black/60 text-indigo-400 px-3 py-2 rounded-lg border border-indigo-500/20 select-all font-mono text-xs shadow-inner">
+                                            {window.location.origin}/auth/{platform.id}/callback
+                                        </code>
+                                    </div>
+                                    <p className="text-[10px] text-slate-500 mt-1.5 leading-tight">
+                                        Salin URL di atas dan tempel pada bagian "Redirect URI" di pengaturan aplikasi {platform.name} Developer Anda.
+                                    </p>
+                                </div>
+                                <button type="submit" className="w-full py-2 bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-bold rounded-lg transition-colors mt-2">
                                     Simpan Kredensial
                                 </button>
                             </form>
@@ -133,15 +144,6 @@ export default function Connections({ connections, credentials = {}, flash }) {
                                             </Link>
                                         </div>
                                     ))}
-                                </div>
-                            )}
-
-                            {user?.is_super_admin && (
-                                <div className="w-full mt-2 pt-4 border-t border-white/5 flex flex-col md:flex-row md:items-center justify-between gap-3 text-xs">
-                                    <span className="text-slate-500 font-medium">Developer Redirect URI (OAuth Callback):</span>
-                                    <code className="bg-black/50 text-indigo-400 px-3 py-1.5 rounded-lg border border-indigo-500/20 select-all font-mono shadow-inner">
-                                        {window.location.origin}/auth/{platform.id}/callback
-                                    </code>
                                 </div>
                             )}
                         </div>
