@@ -1,7 +1,7 @@
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
-import { Head, Link, usePage } from '@inertiajs/react';
+import { Head, Link, usePage, router } from '@inertiajs/react';
 
-export default function Connections({ connections, flash }) {
+export default function Connections({ connections, credentials = {}, flash }) {
     const user = usePage().props.auth.user;
     const platforms = [
         { id: 'youtube', name: 'YouTube', color: 'bg-[#FF0000]', hover: 'hover:bg-[#cc0000]' },
@@ -46,7 +46,19 @@ export default function Connections({ connections, flash }) {
                                         <p className="text-sm text-emerald-400 font-medium">{connectedAccounts.length} Akun terhubung</p>
                                     )}
                                 </div>
-                                <div className="shrink-0">
+                                <div className="shrink-0 flex items-center gap-2">
+                                    {/* Credentials Settings Toggle - Show for all platforms */}
+                                    <button 
+                                        onClick={() => {
+                                            const form = document.getElementById(`cred-form-${platform.id}`);
+                                            form.classList.toggle('hidden');
+                                        }}
+                                        className="px-3 py-2.5 rounded-xl text-sm font-bold text-slate-300 bg-white/5 hover:bg-white/10 transition-all border border-white/10"
+                                        title={`Pengaturan API ${platform.name}`}
+                                    >
+                                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+                                    </button>
+                                    
                                     <a 
                                         href={route('platform.redirect', platform.id)}
                                         className={`inline-flex items-center justify-center px-4 py-2.5 rounded-xl text-sm font-bold text-white transition-all active:scale-95 shadow-md ${platform.color} ${platform.hover}`}
@@ -55,6 +67,50 @@ export default function Connections({ connections, flash }) {
                                     </a>
                                 </div>
                             </div>
+
+                            {/* Credentials Form */}
+                            <form 
+                                id={`cred-form-${platform.id}`} 
+                                className="hidden mt-4 pt-4 border-t border-white/5 space-y-4"
+                                onSubmit={(e) => {
+                                    e.preventDefault();
+                                    const formData = new FormData(e.target);
+                                    const platformToSave = platform.id === 'instagram' ? 'facebook' : platform.id;
+                                    router.post(route('platform.credentials', platformToSave), Object.fromEntries(formData), {
+                                        preserveScroll: true
+                                    });
+                                }}
+                            >
+                                <div className="bg-indigo-500/10 border border-indigo-500/20 text-indigo-300 p-3 rounded-xl text-xs mb-3">
+                                    Untuk keamanan dan melewati limitasi kuota, masukkan Client ID & Secret dari Aplikasi Developer {platform.name} Anda sendiri.
+                                    {platform.id === 'instagram' && " (Gunakan kredensial yang sama dengan Meta/Facebook)"}
+                                </div>
+                                <div>
+                                    <label className="block text-xs font-bold text-slate-400 mb-1">{platform.name} App / Client ID</label>
+                                    <input 
+                                        name="app_id"
+                                        type="text" 
+                                        defaultValue={credentials[platform.id === 'instagram' ? 'facebook' : platform.id]?.app_id || ''}
+                                        required
+                                        className="w-full bg-black/50 border border-white/10 rounded-lg px-3 py-2 text-sm text-white focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 outline-none"
+                                        placeholder="Masukkan ID"
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-xs font-bold text-slate-400 mb-1">{platform.name} App / Client Secret</label>
+                                    <input 
+                                        name="app_secret"
+                                        type="password" 
+                                        defaultValue={credentials[platform.id === 'instagram' ? 'facebook' : platform.id]?.app_secret || ''}
+                                        required
+                                        className="w-full bg-black/50 border border-white/10 rounded-lg px-3 py-2 text-sm text-white focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 outline-none"
+                                        placeholder="Masukkan Secret"
+                                    />
+                                </div>
+                                <button type="submit" className="w-full py-2 bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-bold rounded-lg transition-colors">
+                                    Simpan Kredensial
+                                </button>
+                            </form>
                             
                             {connectedAccounts.length > 0 && (
                                 <div className="space-y-3 mt-2 border-t border-white/5 pt-5">

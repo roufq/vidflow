@@ -37,6 +37,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/connections', [PlatformConnectionController::class, 'index'])->name('connections');
 
     // OAuth Platform Connections
+    Route::post('/auth/{platform}/credentials', [PlatformConnectionController::class, 'saveCredentials'])->name('platform.credentials');
     Route::get('/auth/{platform}', [PlatformConnectionController::class, 'redirect'])->name('platform.redirect');
     Route::get('/auth/{platform}/callback', [PlatformConnectionController::class, 'callback'])->name('platform.callback');
     Route::delete('/auth/connection/{id}', [PlatformConnectionController::class, 'disconnect'])->name('platform.disconnect');

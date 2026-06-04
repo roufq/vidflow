@@ -5,7 +5,9 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use Laravel\Socialite\Facades\Socialite;
 use App\Models\PlatformConnection;
+use App\Models\UserPlatformCredential;
 use Illuminate\Support\Facades\Crypt;
+use Illuminate\Support\Facades\Config;
 
 class PlatformConnectionController extends Controller
 {
@@ -13,7 +15,49 @@ class PlatformConnectionController extends Controller
     {
         // Use groupBy so each platform can have an array of multiple accounts
         $connections = PlatformConnection::where('user_id', auth()->id())->get()->groupBy('platform');
-        return inertia('Connections', ['connections' => $connections]);
+        $credentials = UserPlatformCredential::where('user_id', auth()->id())->get()->keyBy('platform');
+        
+        return inertia('Connections', [
+            'connections' => $connections,
+            'credentials' => $credentials
+        ]);
+    }
+
+    public function saveCredentials(Request $request, $platform)
+    {
+        $request->validate([
+            'app_id' => 'required|string',
+            'app_secret' => 'required|string',
+        ]);
+
+        UserPlatformCredential::updateOrCreate(
+            ['user_id' => auth()->id(), 'platform' => $platform],
+            ['app_id' => $request->app_id, 'app_secret' => $request->app_secret]
+        );
+
+        return back()->with('success', 'Credentials untuk ' . ucfirst($platform) . ' berhasil disimpan.');
+    }
+
+    private function setDynamicConfig($platform)
+    {
+        // Instagram API uses Facebook's credentials behind the scenes
+        $credentialPlatform = ($platform === 'instagram') ? 'facebook' : $platform;
+        $driverName = $credentialPlatform;
+
+        // Check if user has saved credentials
+        $credential = UserPlatformCredential::where('user_id', auth()->id())
+            ->where('platform', $credentialPlatform)
+            ->first();
+
+        if ($credential) {
+            Config::set("services.{$driverName}.client_id", $credential->app_id);
+            Config::set("services.{$driverName}.client_secret", $credential->app_secret);
+        } else {
+            // Force them to input it for ALL platforms
+            abort(403, 'Anda harus mengatur App ID / Client ID dan Secret untuk ' . ucfirst($platform) . ' terlebih dahulu sebelum menghubungkan akun.');
+        }
+        
+        return $driverName;
     }
 
     public function redirect($platform)
@@ -21,8 +65,7 @@ class PlatformConnectionController extends Controller
         $allowed = ['youtube', 'facebook', 'instagram', 'tiktok'];
         if (!in_array($platform, $allowed)) abort(404);
         
-        // Instagram API modern (Graph API) menggunakan jalur Facebook Login
-        $driverName = ($platform === 'instagram') ? 'facebook' : $platform;
+        $driverName = $this->setDynamicConfig($platform);
         $driver = Socialite::driver($driverName);
         
         if ($platform === 'youtube') {
@@ -37,9 +80,8 @@ class PlatformConnectionController extends Controller
                 'pages_manage_posts',       
                 'instagram_basic',          
                 'instagram_content_publish',
-                'business_management' // WAJIB DITAMBAHKAN KARENA META BUSINESS SUITE
-            ])->with(['auth_type' => 'rerequest']); // PAKSA FACEBOOK MINTA IZIN BARU
-            // Timpa redirect URL agar kembali ke platform yang benar (IG atau FB)
+                'business_management'
+            ])->with(['auth_type' => 'rerequest']);
             $driver->redirectUrl(route('platform.callback', ['platform' => $platform]));
         }
         
@@ -49,19 +91,18 @@ class PlatformConnectionController extends Controller
     public function callback($platform)
     {
         try {
-            $driverName = ($platform === 'instagram') ? 'facebook' : $platform;
-            
+            $driverName = $this->setDynamicConfig($platform);
             $driver = Socialite::driver($driverName);
+            
             if ($platform === 'facebook' || $platform === 'instagram') {
                 $driver->redirectUrl(route('platform.callback', ['platform' => $platform]));
             }
             
             $socialUser = $driver->user();
         } catch (\Exception $e) {
-            return redirect()->route('dashboard')->with('error', 'Koneksi gagal: ' . $e->getMessage());
+            return redirect()->route('connections')->with('error', 'Koneksi gagal: ' . $e->getMessage());
         }
 
-        // Update based on platform_user_id to allow multiple accounts per platform!
         PlatformConnection::updateOrCreate(
             [
                 'user_id' => auth()->id(), 
