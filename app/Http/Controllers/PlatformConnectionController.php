@@ -130,8 +130,9 @@ class PlatformConnectionController extends Controller
             return redirect()->route('connections')->with('success', 'Berhasil menghubungkan akun ' . ucfirst($platform));
             
         } catch (\Throwable $e) {
-            \Illuminate\Support\Facades\Log::error('Socialite Error: ' . $e->getMessage(), ['exception' => $e]);
-            return redirect()->route('connections')->with('error', 'Koneksi gagal: ' . $e->getMessage());
+            dd("INI ERROR ASLINYA:", $e->getMessage(), $e->getTraceAsString());
+            // \Illuminate\Support\Facades\Log::error('Socialite Error: ' . $e->getMessage(), ['exception' => $e]);
+            // return redirect()->route('connections')->with('error', 'Koneksi gagal: ' . $e->getMessage());
         }
     }
 
