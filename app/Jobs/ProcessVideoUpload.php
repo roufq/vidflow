@@ -69,9 +69,17 @@ class ProcessVideoUpload implements ShouldQueue
             // ACTUAL API LOGIC FOR YOUTUBE
             // =====================================================================
             if ($this->platformUpload->platform === 'youtube') {
+                $credential = \App\Models\UserPlatformCredential::where('user_id', $job->user_id)
+                    ->where('platform', 'youtube')
+                    ->first();
+
+                if (!$credential) {
+                    throw new \Exception("YouTube Client ID dan Secret belum dikonfigurasi di menu pengaturan (Connections).");
+                }
+
                 $client = new \Google\Client();
-                $client->setClientId(config('services.youtube.client_id'));
-                $client->setClientSecret(config('services.youtube.client_secret'));
+                $client->setClientId($credential->app_id);
+                $client->setClientSecret($credential->app_secret);
                 
                 // Construct the token array for Google Client
                 $tokenArray = [
