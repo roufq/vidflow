@@ -47,11 +47,11 @@ export default function UpdatePasswordForm({ className = '' }) {
     return (
         <section className={className}>
             <header>
-                <h2 className="text-lg font-medium text-gray-900">
+                <h2 className="text-xl font-bold text-white tracking-tight">
                     Update Password
                 </h2>
 
-                <p className="mt-1 text-sm text-gray-600">
+                <p className="mt-2 text-sm text-slate-400 font-medium">
                     Ensure your account is using a long, random password to stay
                     secure.
                 </p>
@@ -131,7 +131,7 @@ export default function UpdatePasswordForm({ className = '' }) {
                         leave="transition ease-in-out"
                         leaveTo="opacity-0"
                     >
-                        <p className="text-sm text-gray-600">
+                        <p className="text-sm text-slate-400 font-medium">
                             Saved.
                         </p>
                     </Transition>
