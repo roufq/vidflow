@@ -324,12 +324,19 @@ class ProcessVideoUpload implements ShouldQueue
                 $publishId = $initResponse->json('data.publish_id');
 
                 // 2. Upload Binary File Video ke URL yang diberikan TikTok
+                $videoSize = filesize($tempPath);
                 $uploadResponse = \Illuminate\Support\Facades\Http::timeout(3600)
-                    ->withBody(file_get_contents($tempPath), 'video/mp4')
+                    ->withHeaders([
+                        'Content-Type' => 'video/mp4',
+                        'Content-Range' => 'bytes 0-' . ($videoSize - 1) . '/' . $videoSize,
+                    ])
+                    ->withOptions([
+                        'body' => fopen($tempPath, 'r')
+                    ])
                     ->put($uploadUrl);
 
                 if ($uploadResponse->failed()) {
-                    throw new \Exception('TikTok Video Upload Error: ' . $uploadResponse->body());
+                    throw new \Exception('TikTok Video Upload Error (Status ' . $uploadResponse->status() . '): ' . $uploadResponse->body());
                 }
 
                 $this->platformUpload->update(['progress_percent' => 90]);
