@@ -301,7 +301,7 @@ class ProcessVideoUpload implements ShouldQueue
                     ->post('https://open.tiktokapis.com/v2/post/publish/video/init/', [
                         'post_info' => [
                             'title' => $job->title,
-                            'privacy_level' => 'MUTUAL_FOLLOW_FRIENDS', // 'PUBLIC_TO_EVERYONE' butuh approval khusus
+                            'privacy_level' => 'SELF_ONLY', // Wajib SELF_ONLY selama aplikasi masih berstatus Sandbox/Draft
                             'disable_duet' => false,
                             'disable_comment' => false,
                             'disable_stitch' => false
