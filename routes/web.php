@@ -80,6 +80,7 @@ Route::get('/system/run-worker', function (\Illuminate\Http\Request $request) {
     
     // Matikan batasan waktu eksekusi PHP agar tidak timeout saat upload
     set_time_limit(0); 
+    ignore_user_abort(true); // Sangat krusial agar Cloudflare tidak membunuh proses di tengah jalan!
     
     // Jalankan antrian dan akan otomatis berhenti jika antrian sudah kosong
     \Illuminate\Support\Facades\Artisan::call('queue:work', [
