@@ -328,6 +328,7 @@ class ProcessVideoUpload implements ShouldQueue
                 $uploadResponse = \Illuminate\Support\Facades\Http::timeout(3600)
                     ->withHeaders([
                         'Content-Type' => 'video/mp4',
+                        'Content-Length' => $videoSize,
                         'Content-Range' => 'bytes 0-' . ($videoSize - 1) . '/' . $videoSize,
                     ])
                     ->withOptions([
