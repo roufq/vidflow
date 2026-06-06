@@ -1,7 +1,15 @@
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
-import { Head } from '@inertiajs/react';
+import { Head, router } from '@inertiajs/react';
+import { useEffect } from 'react';
 
 export default function History({ jobs }) {
+    useEffect(() => {
+        const interval = setInterval(() => {
+            router.reload({ only: ['jobs'], preserveScroll: true, preserveState: true });
+        }, 5000);
+
+        return () => clearInterval(interval);
+    }, []);
     return (
         <AuthenticatedLayout header="History & Status">
             <Head title="History & Status" />
