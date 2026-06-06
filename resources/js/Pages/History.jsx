@@ -23,8 +23,9 @@ export default function History({ jobs }) {
                     <table className="w-full text-sm text-left">
                         <thead className="text-xs text-slate-400 uppercase bg-[#0a0a0a]/50">
                             <tr>
-                                <th scope="col" className="px-6 py-4 font-semibold">Video</th>
-                                <th scope="col" className="px-6 py-4 font-semibold">Waktu</th>
+                                <th scope="col" className="px-6 py-4 font-semibold w-1/3">Detail Video</th>
+                                <th scope="col" className="px-6 py-4 font-semibold">Dibuat Pada</th>
+                                <th scope="col" className="px-6 py-4 font-semibold">Jadwal Tayang</th>
                                 <th scope="col" className="px-6 py-4 font-semibold">Platform & Status</th>
                             </tr>
                         </thead>
@@ -32,11 +33,27 @@ export default function History({ jobs }) {
                             {jobs.data.length > 0 ? jobs.data.map((job) => (
                                 <tr key={job.id} className="border-b border-white/5 hover:bg-white/[0.02] transition-colors">
                                     <td className="px-6 py-4">
-                                        <div className="font-medium text-white mb-1">{job.title}</div>
-                                        <div className="text-xs text-slate-500">{(job.file_size_bytes / (1024*1024)).toFixed(2)} MB</div>
+                                        <div className="font-bold text-white mb-1">{job.title}</div>
+                                        <div className="text-xs text-slate-400 mb-2 line-clamp-2" title={job.description || 'Tidak ada deskripsi'}>
+                                            {job.description || <span className="italic">Tidak ada deskripsi</span>}
+                                        </div>
+                                        <div className="text-xs font-mono text-indigo-400">{(job.file_size_bytes / (1024*1024)).toFixed(2)} MB</div>
                                     </td>
-                                    <td className="px-6 py-4 text-slate-300">
+                                    <td className="px-6 py-4 text-slate-300 text-sm">
                                         {new Date(job.created_at).toLocaleString('id-ID')}
+                                    </td>
+                                    <td className="px-6 py-4 text-sm">
+                                        {job.scheduled_at ? (
+                                            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-amber-500/10 text-amber-400 border border-amber-500/20 font-medium">
+                                                <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                                                {new Date(job.scheduled_at).toLocaleString('id-ID')}
+                                            </span>
+                                        ) : (
+                                            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 font-medium">
+                                                <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
+                                                Langsung
+                                            </span>
+                                        )}
                                     </td>
                                     <td className="px-6 py-4">
                                         <div className="flex flex-wrap gap-2">
@@ -60,10 +77,9 @@ export default function History({ jobs }) {
                                             })}
                                         </div>
                                     </td>
-                                </tr>
                             )) : (
                                 <tr>
-                                    <td colSpan="3" className="px-6 py-12 text-center text-slate-500">
+                                    <td colSpan="4" className="px-6 py-12 text-center text-slate-500">
                                         Belum ada riwayat upload. Mulai upload video pertama Anda!
                                     </td>
                                 </tr>
