@@ -77,6 +77,7 @@ export default function History({ jobs }) {
                                             })}
                                         </div>
                                     </td>
+                                </tr>
                             )) : (
                                 <tr>
                                     <td colSpan="4" className="px-6 py-12 text-center text-slate-500">
