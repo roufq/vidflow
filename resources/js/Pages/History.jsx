@@ -30,7 +30,15 @@ export default function History({ jobs }) {
                             </tr>
                         </thead>
                         <tbody>
-                            {jobs.data.length > 0 ? jobs.data.map((job) => (
+                            {jobs.data.length > 0 ? jobs.data.map((job) => {
+                                const isFailed = job.platform_uploads.some(pu => pu.status === 'failed');
+                                const isAllDone = job.platform_uploads.length > 0 && job.platform_uploads.every(pu => pu.status === 'done' || pu.status === 'success');
+                                
+                                let scheduleColor = 'bg-amber-500/10 text-amber-400 border-amber-500/20'; // default pending/uploading
+                                if (isFailed) scheduleColor = 'bg-red-500/10 text-red-400 border-red-500/20';
+                                else if (isAllDone) scheduleColor = 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20';
+
+                                return (
                                 <tr key={job.id} className="border-b border-white/5 hover:bg-white/[0.02] transition-colors">
                                     <td className="px-6 py-4">
                                         <div className="font-bold text-white mb-1">{job.title}</div>
@@ -44,12 +52,12 @@ export default function History({ jobs }) {
                                     </td>
                                     <td className="px-6 py-4 text-sm">
                                         {job.scheduled_at ? (
-                                            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-amber-500/10 text-amber-400 border border-amber-500/20 font-medium">
+                                            <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md border font-medium ${scheduleColor}`}>
                                                 <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
                                                 {new Date(job.scheduled_at).toLocaleString('id-ID')}
                                             </span>
                                         ) : (
-                                            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 font-medium">
+                                            <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md border font-medium ${scheduleColor}`}>
                                                 <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
                                                 Langsung
                                             </span>
@@ -78,7 +86,8 @@ export default function History({ jobs }) {
                                         </div>
                                     </td>
                                 </tr>
-                            )) : (
+                                );
+                            }) : (
                                 <tr>
                                     <td colSpan="4" className="px-6 py-12 text-center text-slate-500">
                                         Belum ada riwayat upload. Mulai upload video pertama Anda!
