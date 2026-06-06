@@ -44,6 +44,12 @@ class PlatformConnectionController extends Controller
         $credentialPlatform = ($platform === 'instagram') ? 'facebook' : $platform;
         $driverName = $credentialPlatform;
 
+        // Pengecualian spesial untuk TikTok: Gunakan Master Credentials dari .env
+        if ($platform === 'tiktok') {
+            Config::set("services.{$driverName}.redirect", route('platform.callback', ['platform' => $platform]));
+            return $driverName;
+        }
+
         // Check if user has saved credentials
         $credential = UserPlatformCredential::where('user_id', auth()->id())
             ->where('platform', $credentialPlatform)

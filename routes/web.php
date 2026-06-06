@@ -7,6 +7,7 @@ use Inertia\Inertia;
 use App\Http\Controllers\PlatformConnectionController;
 use App\Http\Controllers\UploadController;
 use App\Http\Controllers\HistoryController;
+use App\Http\Controllers\WebhookController;
 
 Route::get('/', function () {
     return redirect()->route('login');
@@ -65,6 +66,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
 });
 
 require __DIR__.'/auth.php';
+
+// Webhooks from Social Media
+Route::match(['get', 'post'], '/webhooks/{platform}', [WebhookController::class, 'handle'])->name('webhooks.handle');
 
 // =========================================================================
 // ALTERNATIF HOSTING TANPA TERMINAL (INFINITYFREE / CPANEL)

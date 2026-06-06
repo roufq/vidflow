@@ -12,6 +12,7 @@ export default function Dashboard({ flash, connections = {} }) {
         description: '',
         tags: '',
         video: null,
+        thumbnail: null,
         selected_connections: [],
         scheduled_at: '',
     });
@@ -19,6 +20,12 @@ export default function Dashboard({ flash, connections = {} }) {
     const handleFileChange = (e) => {
         if (e.target.files && e.target.files[0]) {
             setData('video', e.target.files[0]);
+        }
+    };
+
+    const handleThumbnailChange = (e) => {
+        if (e.target.files && e.target.files[0]) {
+            setData('thumbnail', e.target.files[0]);
         }
     };
 
@@ -36,7 +43,7 @@ export default function Dashboard({ flash, connections = {} }) {
         post(route('uploads.store'), {
             preserveScroll: true,
             onSuccess: () => {
-                setData({ ...data, video: null, title: '', description: '', tags: '' });
+                setData({ ...data, video: null, thumbnail: null, title: '', description: '', tags: '' });
                 if (fileInputRef.current) fileInputRef.current.value = '';
             }
         });
@@ -125,6 +132,21 @@ export default function Dashboard({ flash, connections = {} }) {
                                 <label className="block text-sm font-semibold text-slate-300 mb-2">Tags / Hashtags (Maks 500 Karakter)</label>
                                 <input type="text" maxLength="500" value={data.tags} onChange={e => setData('tags', e.target.value)} className="w-full bg-[#0a0a0a] border border-white/10 rounded-xl px-4 py-3 text-white focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all placeholder:text-slate-600" placeholder="pisahkan, dengan, koma" />
                                 <InputError message={errors.tags} className="mt-1" />
+                            </div>
+                            
+                            <div className="pt-2 border-t border-white/5">
+                                <label className="block text-sm font-semibold text-slate-300 mb-2">Custom Thumbnail (Opsional)</label>
+                                <div className="flex items-center gap-4">
+                                    <label className="flex-shrink-0 cursor-pointer inline-flex items-center justify-center px-4 py-2.5 border border-white/10 rounded-xl text-sm font-medium text-white bg-white/5 hover:bg-white/10 transition-colors">
+                                        <input type="file" className="hidden" accept="image/jpeg,image/png,image/jpg" onChange={handleThumbnailChange} />
+                                        <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
+                                        Pilih Gambar
+                                    </label>
+                                    <div className="text-sm text-slate-400 truncate">
+                                        {data.thumbnail ? data.thumbnail.name : 'Tidak ada gambar dipilih (Maks 5MB)'}
+                                    </div>
+                                </div>
+                                <InputError message={errors.thumbnail} className="mt-1" />
                             </div>
                         </div>
                     </div>

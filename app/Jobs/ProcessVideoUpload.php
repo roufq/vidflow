@@ -12,6 +12,8 @@ use App\Models\PlatformConnection;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Mail;
+use App\Mail\UploadStatusNotification;
 
 class ProcessVideoUpload implements ShouldQueue
 {
@@ -149,6 +151,71 @@ class ProcessVideoUpload implements ShouldQueue
 
                 $finalVideoId = $status['id'];
                 $finalUrl = 'https://youtube.com/watch?v=' . $finalVideoId;
+                
+                // Custom Thumbnail Logic for YouTube
+                if ($job->thumbnail_path) {
+                    try {
+                        $thumbTempPath = storage_path('app/thumb_' . uniqid() . '_' . basename($job->thumbnail_path));
+                        
+                        $readThumbStream = Storage::disk($disk)->readStream($job->thumbnail_path);
+                        if ($readThumbStream) {
+                            $writeThumbStream = fopen($thumbTempPath, 'w');
+                            stream_copy_to_stream($readThumbStream, $writeThumbStream);
+                            fclose($writeThumbStream);
+                            fclose($readThumbStream);
+                            
+                            $chunkSizeBytesThumb = 1 * 1024 * 1024;
+                            $client->setDefer(true);
+                            $setRequest = $youtube->thumbnails->set($finalVideoId);
+                            $mediaThumb = new \Google\Http\MediaFileUpload(
+                                $client,
+                                $setRequest,
+                                'image/*',
+                                null,
+                                true,
+                                $chunkSizeBytesThumb
+                            );
+                            $mediaThumb->setFileSize(filesize($thumbTempPath));
+                            $statusThumb = false;
+                            $handleThumb = fopen($thumbTempPath, "rb");
+                            while (!$statusThumb && !feof($handleThumb)) {
+                                $chunkThumb = fread($handleThumb, $chunkSizeBytesThumb);
+                                $statusThumb = $mediaThumb->nextChunk($chunkThumb);
+                            }
+                            fclose($handleThumb);
+                            $client->setDefer(false);
+                            @unlink($thumbTempPath);
+                        } else {
+                            $thumbContent = Storage::disk($disk)->get($job->thumbnail_path);
+                            if ($thumbContent) {
+                                file_put_contents($thumbTempPath, $thumbContent);
+                                $chunkSizeBytesThumb = 1 * 1024 * 1024;
+                                $client->setDefer(true);
+                                $setRequest = $youtube->thumbnails->set($finalVideoId);
+                                $mediaThumb = new \Google\Http\MediaFileUpload(
+                                    $client,
+                                    $setRequest,
+                                    'image/*',
+                                    null,
+                                    true,
+                                    $chunkSizeBytesThumb
+                                );
+                                $mediaThumb->setFileSize(filesize($thumbTempPath));
+                                $statusThumb = false;
+                                $handleThumb = fopen($thumbTempPath, "rb");
+                                while (!$statusThumb && !feof($handleThumb)) {
+                                    $chunkThumb = fread($handleThumb, $chunkSizeBytesThumb);
+                                    $statusThumb = $mediaThumb->nextChunk($chunkThumb);
+                                }
+                                fclose($handleThumb);
+                                $client->setDefer(false);
+                                @unlink($thumbTempPath);
+                            }
+                        }
+                    } catch (\Exception $e) {
+                        Log::warning("Gagal mengupload thumbnail ke YouTube: " . $e->getMessage());
+                    }
+                }
 
             } elseif ($this->platformUpload->platform === 'facebook') {
                 // =====================================================================
@@ -359,6 +426,16 @@ class ProcessVideoUpload implements ShouldQueue
             ]);
 
             Log::info("Successfully uploaded video to {$this->platformUpload->platform} for user {$job->user_id}");
+            
+            // Send Success Email
+            try {
+                $user = \App\Models\User::find($job->user_id);
+                if ($user) {
+                    Mail::to($user->email)->send(new UploadStatusNotification($this->platformUpload));
+                }
+            } catch (\Exception $e) {
+                Log::warning("Gagal mengirim email notifikasi sukses: " . $e->getMessage());
+            }
 
         } catch (\Throwable $e) {
             if (isset($tempPath) && file_exists($tempPath)) @unlink($tempPath);
@@ -369,6 +446,18 @@ class ProcessVideoUpload implements ShouldQueue
                 'retry_count' => $this->platformUpload->retry_count + 1
             ]);
             Log::error("Failed to upload to {$this->platformUpload->platform}: " . $e->getMessage());
+            
+            // Send Failure Email if out of retries (or just send it anyway for transparency)
+            if ($this->platformUpload->retry_count >= $this->tries) {
+                try {
+                    $user = \App\Models\User::find($job->user_id);
+                    if ($user) {
+                        Mail::to($user->email)->send(new UploadStatusNotification($this->platformUpload));
+                    }
+                } catch (\Exception $mailEx) {
+                    Log::warning("Gagal mengirim email notifikasi gagal: " . $mailEx->getMessage());
+                }
+            }
             
             throw $e;
         }
