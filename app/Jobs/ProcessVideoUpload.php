@@ -20,7 +20,7 @@ class ProcessVideoUpload implements ShouldQueue
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
     public $timeout = 3600; // 1 hour timeout
-    public $tries = 3;
+    public $tries = 10; // Ditingkatkan agar Instagram punya waktu untuk merender video
 
     protected $platformUpload;
     protected $baseUrl;
@@ -460,6 +460,31 @@ class ProcessVideoUpload implements ShouldQueue
             }
             
             throw $e;
+        }
+    }
+
+    /**
+     * Handle a job failure.
+     */
+    public function failed(\Throwable $exception): void
+    {
+        // Fitur ini penting agar ketika Job "mati" di tengah jalan (misal kehabisan memori atau limit retry habis),
+        // status di database tetap berubah menjadi failed dan tidak nyangkut di "uploading" selamanya.
+        $this->platformUpload->update([
+            'status' => 'failed',
+            'error_message' => 'Job Failed/Timeout/Max Tries Reached: ' . $exception->getMessage()
+        ]);
+
+        Log::error("Job ProcessVideoUpload mati secara fatal untuk {$this->platformUpload->platform}: " . $exception->getMessage());
+
+        try {
+            $job = $this->platformUpload->uploadJob;
+            $user = \App\Models\User::find($job->user_id);
+            if ($user) {
+                Mail::to($user->email)->send(new UploadStatusNotification($this->platformUpload));
+            }
+        } catch (\Exception $mailEx) {
+            Log::warning("Gagal mengirim email notifikasi gagal saat job mati: " . $mailEx->getMessage());
         }
     }
 }
