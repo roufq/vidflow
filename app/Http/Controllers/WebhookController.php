@@ -27,10 +27,46 @@ class WebhookController extends Controller
                 return response('Invalid Verify Token', 403);
             }
 
-            // Handle Meta POST Webhook (e.g., video processed, permissions revoked)
+            // Handle Meta POST Webhook
             if ($request->isMethod('post')) {
-                // Here we would parse $request->all() to find specific events
-                // e.g., if a user revoked access, we disconnect their PlatformConnection
+                $payload = $request->all();
+                
+                // Parse video status changes
+                if (isset($payload['entry'])) {
+                    foreach ($payload['entry'] as $entry) {
+                        if (isset($entry['changes'])) {
+                            foreach ($entry['changes'] as $change) {
+                                if ($change['field'] === 'videos' && isset($change['value']['video_id'])) {
+                                    $videoId = $change['value']['video_id'];
+                                    $status = $change['value']['status']['video_status'] ?? null; // Usually 'published', 'error', etc.
+                                    
+                                    if ($status) {
+                                        $upload = \App\Models\PlatformUpload::where('platform_video_id', $videoId)->first();
+                                        if ($upload) {
+                                            $newStatus = ($status === 'published') ? 'done' : (($status === 'error') ? 'failed' : 'uploading');
+                                            
+                                            if ($newStatus !== $upload->status) {
+                                                $upload->update([
+                                                    'status' => $newStatus,
+                                                    'error_message' => ($newStatus === 'failed') ? 'Meta Webhook: Video processing failed' : null
+                                                ]);
+
+                                                // Trigger In-App Notification + Email
+                                                if ($newStatus === 'done' || $newStatus === 'failed') {
+                                                    $user = \App\Models\User::find($upload->uploadJob->user_id);
+                                                    if ($user) {
+                                                        $user->notify(new \App\Notifications\VideoStatusNotification($upload));
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+
                 return response('EVENT_RECEIVED', 200);
             }
         }

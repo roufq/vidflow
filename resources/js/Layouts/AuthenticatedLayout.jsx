@@ -1,10 +1,11 @@
-import { Link, usePage } from '@inertiajs/react';
+import { Link, usePage, router } from '@inertiajs/react';
 import { useState } from 'react';
 import ApplicationLogo from '@/Components/ApplicationLogo';
 import Dropdown from '@/Components/Dropdown';
 
 export default function AuthenticatedLayout({ header, children }) {
-    const user = usePage().props.auth.user;
+    const { auth, notifications } = usePage().props;
+    const user = auth.user;
     const [sidebarOpen, setSidebarOpen] = useState(false);
 
     return (
@@ -76,9 +77,46 @@ export default function AuthenticatedLayout({ header, children }) {
                         <h1 className="text-lg font-bold text-white tracking-tight">{header || 'Dashboard'}</h1>
                     </div>
                     <div className="flex items-center gap-4">
-                        <button className="text-slate-400 hover:text-white transition-colors relative">
-                            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/></svg>
-                        </button>
+                        <Dropdown>
+                            <Dropdown.Trigger>
+                                <button className="text-slate-400 hover:text-white transition-colors relative mt-1">
+                                    <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/></svg>
+                                    {notifications?.length > 0 && (
+                                        <span className="absolute -top-1 -right-1 flex h-3 w-3">
+                                            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+                                            <span className="relative inline-flex rounded-full h-3 w-3 bg-red-500"></span>
+                                        </span>
+                                    )}
+                                </button>
+                            </Dropdown.Trigger>
+                            <Dropdown.Content align="right" width="64" contentClasses="py-1 bg-[#1a1a1a] border border-white/10 shadow-2xl">
+                                <div className="px-4 py-2 border-b border-white/10 flex justify-between items-center">
+                                    <span className="font-semibold text-white text-sm">Notifications</span>
+                                    {notifications?.length > 0 && (
+                                        <button onClick={() => router.post(route('notifications.read'), {}, { preserveScroll: true })} className="text-xs text-indigo-400 hover:text-indigo-300">Mark all as read</button>
+                                    )}
+                                </div>
+                                <div className="max-h-64 overflow-y-auto">
+                                    {notifications?.length > 0 ? notifications.map(notification => (
+                                        <div key={notification.id} className="px-4 py-3 border-b border-white/5 hover:bg-white/5 transition-colors">
+                                            <div className="flex items-start gap-3">
+                                                <div className={`mt-0.5 w-2 h-2 rounded-full flex-shrink-0 ${notification.data.status === 'failed' ? 'bg-red-500' : 'bg-emerald-500'}`}></div>
+                                                <div>
+                                                    <p className="text-sm font-medium text-white mb-0.5">
+                                                        <span className="capitalize">{notification.data.platform}</span>: {notification.data.title}
+                                                    </p>
+                                                    <p className="text-xs text-slate-400 line-clamp-2">
+                                                        {notification.data.status === 'failed' ? notification.data.error_message : 'Video berhasil dipublikasikan.'}
+                                                    </p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    )) : (
+                                        <div className="px-4 py-6 text-center text-sm text-slate-500">Tidak ada notifikasi baru</div>
+                                    )}
+                                </div>
+                            </Dropdown.Content>
+                        </Dropdown>
                         
                         <div className="h-6 w-px bg-white/10 mx-1 hidden sm:block"></div>
                         

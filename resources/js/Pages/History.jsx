@@ -77,9 +77,18 @@ export default function History({ jobs }) {
                                                     colorClass = 'bg-indigo-500/10 text-indigo-400 border-indigo-500/20';
                                                 }
                                                 return (
-                                                    <div key={pu.id} className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium border ${colorClass}`}>
+                                                    <div key={pu.id} className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium border ${colorClass} relative group`}>
                                                         <span className="capitalize mr-1.5 font-bold">{pu.platform}</span> 
                                                         &bull; {pu.status}
+                                                        {pu.status === 'failed' && (
+                                                            <button 
+                                                                onClick={() => router.post(route('history.retry', pu.id), {}, { preserveScroll: true })}
+                                                                className="ml-2 bg-red-500/20 hover:bg-red-500/40 text-red-200 rounded-full p-0.5 transition-colors"
+                                                                title={`Retry ${pu.platform} upload\nError: ${pu.error_message || 'Unknown error'}`}
+                                                            >
+                                                                <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+                                                            </button>
+                                                        )}
                                                     </div>
                                                 );
                                             })}

@@ -12,8 +12,7 @@ use App\Models\PlatformConnection;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\Storage;
-use Illuminate\Support\Facades\Mail;
-use App\Mail\UploadStatusNotification;
+use App\Notifications\VideoStatusNotification;
 
 class ProcessVideoUpload implements ShouldQueue
 {
@@ -452,10 +451,10 @@ class ProcessVideoUpload implements ShouldQueue
                 try {
                     $user = \App\Models\User::find($job->user_id);
                     if ($user) {
-                        Mail::to($user->email)->send(new UploadStatusNotification($this->platformUpload));
+                        $user->notify(new VideoStatusNotification($this->platformUpload));
                     }
                 } catch (\Exception $mailEx) {
-                    Log::warning("Gagal mengirim email notifikasi gagal: " . $mailEx->getMessage());
+                    Log::warning("Gagal mengirim email/notifikasi: " . $mailEx->getMessage());
                 }
             }
             
@@ -481,7 +480,7 @@ class ProcessVideoUpload implements ShouldQueue
             $job = $this->platformUpload->uploadJob;
             $user = \App\Models\User::find($job->user_id);
             if ($user) {
-                Mail::to($user->email)->send(new UploadStatusNotification($this->platformUpload));
+                $user->notify(new VideoStatusNotification($this->platformUpload));
             }
         } catch (\Exception $mailEx) {
             Log::warning("Gagal mengirim email notifikasi gagal saat job mati: " . $mailEx->getMessage());

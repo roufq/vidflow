@@ -35,6 +35,11 @@ Route::middleware(['auth', 'verified'])->group(function () {
     })->name('analytics');
 
     Route::get('/history', [HistoryController::class, 'index'])->name('history');
+    Route::post('/history/retry/{id}', [HistoryController::class, 'retry'])->name('history.retry');
+    Route::post('/notifications/read', function() {
+        auth()->user()->unreadNotifications->markAsRead();
+        return back();
+    })->name('notifications.read');
     Route::get('/connections', [PlatformConnectionController::class, 'index'])->name('connections');
 
     // OAuth Platform Connections
