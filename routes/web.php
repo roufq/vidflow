@@ -14,7 +14,7 @@ Route::get('/', function () {
 });
 
 // Halaman privasi sederhana untuk lolos verifikasi bot Facebook (Wajib HTTP 200 OK)
-Route::get('/privacy', function () {
+Route::get('/privacy-policy', function () {
     return '<h1>Privacy Policy & Data Deletion</h1><p>To delete your data or disconnect your account, please login and use the Disconnect button in the dashboard, or contact the administrator.</p>';
 });
 
