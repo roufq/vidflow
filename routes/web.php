@@ -40,14 +40,24 @@ Route::get('/privacy', function () {
 
         <h1 style="margin-top: 3rem;">VidFlow Privacy Policy</h1>
         <p><strong>Last Updated:</strong> June 2026</p>
+        
         <h2>1. Information We Collect</h2>
-        <p>We collect basic profile information (Name, Email) and OAuth access tokens required to publish videos to your connected social media channels.</p>
-        <h2>2. Data Usage</h2>
-        <p>Your OAuth tokens are securely encrypted in our database and are solely used for the purpose of uploading your videos as requested by you within the dashboard.</p>
-        <h2>3. Data Deletion</h2>
-        <p>You can revoke access and delete your data at any time by logging into your VidFlow dashboard and clicking the "Disconnect" button next to your connected platform. Upon disconnection, your access tokens are permanently deleted from our servers.</p>
-        <h2>4. Contact Us</h2>
-        <p>If you have any questions or concerns regarding your privacy or data, please contact the system administrator.</p>
+        <p>We collect basic profile information (Name, Email) and OAuth access tokens required to publish videos to your connected social media channels. When you connect your TikTok account, we access your basic profile information and the ability to publish videos on your behalf via the TikTok API.</p>
+        
+        <h2>2. Use of TikTok Data</h2>
+        <p>VidFlow uses TikTok API services to facilitate video uploading and scheduling. We strictly use your TikTok data (access tokens) only to provide the upload functionality you request. We do not use your data for any other purposes, nor do we run automated scripts outside of your explicit upload commands.</p>
+        
+        <h2>3. Data Storage and Sharing</h2>
+        <p>Your OAuth tokens are securely encrypted in our database. We <strong>do not sell, rent, or share</strong> your personal information or TikTok data with any third parties or advertising networks.</p>
+        
+        <h2>4. Data Deletion and Revoking Access</h2>
+        <p>You can revoke VidFlow's access to your TikTok account and delete your data at any time by logging into your VidFlow dashboard and clicking the "Disconnect" button. Upon disconnection, all related access tokens and account references are permanently deleted from our servers. You may also revoke access directly through your TikTok account settings.</p>
+        
+        <h2>5. Third-Party Policies</h2>
+        <p>By using VidFlow to connect to TikTok, you also agree to be bound by the <a href="https://www.tiktok.com/legal/page/row/terms-of-service/en" target="_blank">TikTok Terms of Service</a> and the <a href="https://www.tiktok.com/legal/page/row/privacy-policy/en" target="_blank">TikTok Privacy Policy</a>.</p>
+        
+        <h2>6. Contact Us</h2>
+        <p>If you have any questions or concerns regarding your privacy, data usage, or wish to request manual data deletion, please contact our system administrator.</p>
     </body>
     </html>
     ';
