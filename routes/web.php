@@ -377,6 +377,53 @@ Route::get('/system/clear-cache', function (\Illuminate\Http\Request $request) {
     ]);
 });
 
+Route::get('/system/check-meta-api', function () {
+    $uploads = \App\Models\PlatformUpload::with('connection')
+        ->whereIn('platform', ['facebook', 'instagram'])
+        ->whereNotNull('platform_video_id')
+        ->orderByDesc('id')
+        ->take(2)
+        ->get();
+        
+    $results = [];
+    foreach ($uploads as $upload) {
+        $connection = $upload->connection;
+        if (!$connection) continue;
+        
+        $pagesResponse = \Illuminate\Support\Facades\Http::withToken($connection->access_token)
+            ->get('https://graph.facebook.com/v19.0/me/accounts');
+        $pages = $pagesResponse->json();
+        
+        if (empty($pages['data'])) {
+            $results[$upload->platform] = ['error' => 'No pages found', 'raw' => $pages];
+            continue;
+        }
+        
+        $pageToken = $pages['data'][0]['access_token'];
+        
+        if ($upload->platform === 'facebook') {
+            $response = \Illuminate\Support\Facades\Http::withToken($pageToken)
+                ->get("https://graph.facebook.com/v19.0/{$upload->platform_video_id}", ['fields' => 'likes.summary(true)']);
+            $insights = \Illuminate\Support\Facades\Http::withToken($pageToken)
+                ->get("https://graph.facebook.com/v19.0/{$upload->platform_video_id}/video_insights/total_video_views");
+            $results['facebook'] = [
+                'video_id' => $upload->platform_video_id,
+                'likes_response' => $response->json(),
+                'insights_response' => $insights->json()
+            ];
+        } else {
+            $response = \Illuminate\Support\Facades\Http::withToken($pageToken)
+                ->get("https://graph.facebook.com/v19.0/{$upload->platform_video_id}", ['fields' => 'like_count,comments_count']);
+            $results['instagram'] = [
+                'video_id' => $upload->platform_video_id,
+                'ig_response' => $response->json()
+            ];
+        }
+    }
+    
+    return response()->json($results);
+});
+
 Route::get('/system/errors', function () {
     return response()->json(
         \App\Models\PlatformUpload::where('status', 'failed')
