@@ -130,18 +130,29 @@ Route::middleware(['auth', 'verified'])->group(function () {
                         $upload->likes = $stats['likeCount'] ?? $upload->likes;
                     }
                 } elseif (in_array($upload->platform, ['facebook', 'instagram'])) {
-                    $response = \Illuminate\Support\Facades\Http::withToken($connection->access_token)
-                        ->get("https://graph.facebook.com/v19.0/{$upload->platform_video_id}", [
-                            'fields' => 'views,likes.summary(true)'
-                        ]);
+                    // For Facebook/Instagram, videos are posted on Pages, so we need the Page Token.
+                    $pagesResponse = \Illuminate\Support\Facades\Http::withToken($connection->access_token)
+                        ->get('https://graph.facebook.com/v19.0/me/accounts');
                     
-                    if ($response->successful()) {
-                        $stats = $response->json();
-                        $upload->views = isset($stats['views']) ? $stats['views'] : 0;
-                        $upload->likes = isset($stats['likes']['summary']['total_count']) ? $stats['likes']['summary']['total_count'] : 0;
-                        $upload->error_message = null; // Clear error if successful
+                    $pages = $pagesResponse->json('data');
+                    if (!empty($pages)) {
+                        $pageToken = $pages[0]['access_token'];
+                        
+                        $response = \Illuminate\Support\Facades\Http::withToken($pageToken)
+                            ->get("https://graph.facebook.com/v19.0/{$upload->platform_video_id}", [
+                                'fields' => 'views,likes.summary(true)'
+                            ]);
+                        
+                        if ($response->successful()) {
+                            $stats = $response->json();
+                            $upload->views = isset($stats['views']) ? $stats['views'] : 0;
+                            $upload->likes = isset($stats['likes']['summary']['total_count']) ? $stats['likes']['summary']['total_count'] : 0;
+                            $upload->error_message = null;
+                        } else {
+                            $upload->error_message = 'Meta API Error: ' . $response->body();
+                        }
                     } else {
-                        $upload->error_message = 'Meta API Error: ' . $response->body();
+                        $upload->error_message = 'Meta Error: No pages found for this user.';
                     }
                 } elseif ($upload->platform === 'tiktok') {
                     $response = \Illuminate\Support\Facades\Http::withToken($connection->access_token)
