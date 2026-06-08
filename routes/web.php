@@ -117,8 +117,10 @@ Route::middleware(['auth', 'verified'])->group(function () {
             if (!$connection) continue;
 
             try {
+                $accessToken = \Illuminate\Support\Facades\Crypt::decryptString($connection->access_token);
+                
                 if ($upload->platform === 'youtube') {
-                    $response = \Illuminate\Support\Facades\Http::withToken($connection->access_token)
+                    $response = \Illuminate\Support\Facades\Http::withToken($accessToken)
                         ->get('https://www.googleapis.com/youtube/v3/videos', [
                             'part' => 'statistics',
                             'id' => $upload->platform_video_id
@@ -130,7 +132,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
                         $upload->likes = $stats['likeCount'] ?? $upload->likes;
                     }
                 } elseif ($upload->platform === 'facebook') {
-                    $pagesResponse = \Illuminate\Support\Facades\Http::withToken($connection->access_token)
+                    $pagesResponse = \Illuminate\Support\Facades\Http::withToken($accessToken)
                         ->get('https://graph.facebook.com/v19.0/me/accounts');
                     
                     $pages = $pagesResponse->json('data');
@@ -164,7 +166,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
                         $upload->error_message = 'FB Error: No pages found for this user.';
                     }
                 } elseif ($upload->platform === 'instagram') {
-                    $pagesResponse = \Illuminate\Support\Facades\Http::withToken($connection->access_token)
+                    $pagesResponse = \Illuminate\Support\Facades\Http::withToken($accessToken)
                         ->get('https://graph.facebook.com/v19.0/me/accounts');
                     
                     $pages = $pagesResponse->json('data');
@@ -188,7 +190,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
                         $upload->error_message = 'IG Error: No pages found for this user.';
                     }
                 } elseif ($upload->platform === 'tiktok') {
-                    $response = \Illuminate\Support\Facades\Http::withToken($connection->access_token)
+                    $response = \Illuminate\Support\Facades\Http::withToken($accessToken)
                         ->post('https://open.tiktokapis.com/v2/video/query/?fields=view_count,like_count', [
                             'filters' => ['video_ids' => [$upload->platform_video_id]]
                         ]);
@@ -390,7 +392,9 @@ Route::get('/system/check-meta-api', function () {
         $connection = $upload->connection;
         if (!$connection) continue;
         
-        $pagesResponse = \Illuminate\Support\Facades\Http::withToken($connection->access_token)
+        $accessToken = \Illuminate\Support\Facades\Crypt::decryptString($connection->access_token);
+        
+        $pagesResponse = \Illuminate\Support\Facades\Http::withToken($accessToken)
             ->get('https://graph.facebook.com/v19.0/me/accounts');
         $pages = $pagesResponse->json();
         
