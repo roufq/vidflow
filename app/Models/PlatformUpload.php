@@ -31,4 +31,9 @@ class PlatformUpload extends Model
     {
         return $this->belongsTo(UploadJob::class, 'job_id');
     }
+
+    public function connection()
+    {
+        return $this->belongsTo(PlatformConnection::class, 'connection_id');
+    }
 }
