@@ -79,7 +79,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
         $totalUploads = \App\Models\UploadJob::where('user_id', auth()->id())->count();
         $activeConnections = \App\Models\PlatformConnection::where('user_id', auth()->id())->count();
         
-        $uploads = \App\Models\PlatformUpload::whereHas('job', function($q) {
+        $uploads = \App\Models\PlatformUpload::whereHas('uploadJob', function($q) {
             $q->where('user_id', auth()->id());
         })->get();
         
@@ -95,7 +95,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     })->name('analytics');
 
     Route::post('/analytics/sync', function () {
-        $uploads = \App\Models\PlatformUpload::whereHas('job', function($q) {
+        $uploads = \App\Models\PlatformUpload::whereHas('uploadJob', function($q) {
             $q->where('user_id', auth()->id());
         })->whereNotNull('platform_video_id')->get();
         
