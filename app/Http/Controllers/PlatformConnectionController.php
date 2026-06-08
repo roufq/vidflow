@@ -80,7 +80,7 @@ class PlatformConnectionController extends Controller
             $driver->scopes(['https://www.googleapis.com/auth/youtube.upload', 'https://www.googleapis.com/auth/youtube.readonly']);
             $driver->with(['access_type' => 'offline', 'prompt' => 'consent']);
         } elseif ($platform === 'tiktok') {
-            $driver->scopes(['video.upload', 'video.publish', 'user.info.basic']);
+            $driver->scopes(['video.upload', 'video.publish', 'user.info.basic', 'video.list']);
         } elseif ($platform === 'facebook' || $platform === 'instagram') {
             $driver->scopes([
                 'pages_show_list', 
