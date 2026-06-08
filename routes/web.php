@@ -13,9 +13,44 @@ Route::get('/', function () {
     return redirect()->route('login');
 });
 
-// Halaman privasi sederhana untuk lolos verifikasi bot Facebook (Wajib HTTP 200 OK)
+// Halaman privasi dan TOS untuk lolos verifikasi bot/manual Meta dan TikTok
 Route::get('/privacy', function () {
-    return '<h1>Privacy Policy & Data Deletion</h1><p>To delete your data or disconnect your account, please login and use the Disconnect button in the dashboard, or contact the administrator.</p>';
+    return '
+    <!DOCTYPE html>
+    <html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Terms of Service & Privacy Policy - VidFlow</title>
+        <style>
+            body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; line-height: 1.6; color: #333; max-width: 800px; margin: 0 auto; padding: 2rem; }
+            h1 { color: #111; border-bottom: 1px solid #eee; padding-bottom: 0.5rem; }
+            h2 { color: #444; margin-top: 2rem; }
+            p { margin-bottom: 1rem; }
+        </style>
+    </head>
+    <body>
+        <h1>VidFlow Terms of Service</h1>
+        <p><strong>Last Updated:</strong> June 2026</p>
+        <p>Welcome to VidFlow. By using our service, you agree to these terms. VidFlow is a video management and scheduling dashboard designed to help users upload content to various social media platforms.</p>
+        <h2>1. User Responsibilities</h2>
+        <p>You must ensure that any video content you upload via VidFlow complies with the copyright laws and the community guidelines of the respective platforms (YouTube, Facebook, Instagram, TikTok).</p>
+        <h2>2. API Services</h2>
+        <p>Our application uses API services from YouTube, Meta, and TikTok. By authenticating your accounts, you grant us permission to publish videos on your behalf. We do not use your account for any other automated actions.</p>
+
+        <h1 style="margin-top: 3rem;">VidFlow Privacy Policy</h1>
+        <p><strong>Last Updated:</strong> June 2026</p>
+        <h2>1. Information We Collect</h2>
+        <p>We collect basic profile information (Name, Email) and OAuth access tokens required to publish videos to your connected social media channels.</p>
+        <h2>2. Data Usage</h2>
+        <p>Your OAuth tokens are securely encrypted in our database and are solely used for the purpose of uploading your videos as requested by you within the dashboard.</p>
+        <h2>3. Data Deletion</h2>
+        <p>You can revoke access and delete your data at any time by logging into your VidFlow dashboard and clicking the "Disconnect" button next to your connected platform. Upon disconnection, your access tokens are permanently deleted from our servers.</p>
+        <h2>4. Contact Us</h2>
+        <p>If you have any questions or concerns regarding your privacy or data, please contact the system administrator.</p>
+    </body>
+    </html>
+    ';
 });
 
 Route::middleware(['auth', 'verified'])->group(function () {
@@ -45,6 +80,11 @@ Route::middleware(['auth', 'verified'])->group(function () {
     // OAuth Platform Connections
     Route::post('/auth/{platform}/credentials', [PlatformConnectionController::class, 'saveCredentials'])->name('platform.credentials');
     Route::get('/auth/{platform}', [PlatformConnectionController::class, 'redirect'])->name('platform.redirect');
+    // Override khusus TikTok untuk menghindari kata "tiktok" pada URI callback
+    Route::get('/auth/tt/callback', function () {
+        return app(\App\Http\Controllers\PlatformConnectionController::class)->callback('tiktok');
+    })->name('tt.callback.override');
+
     Route::get('/auth/{platform}/callback', [PlatformConnectionController::class, 'callback'])->name('platform.callback');
     Route::delete('/auth/connection/{id}', [PlatformConnectionController::class, 'disconnect'])->name('platform.disconnect');
 

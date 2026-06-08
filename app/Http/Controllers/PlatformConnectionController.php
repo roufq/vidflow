@@ -45,8 +45,9 @@ class PlatformConnectionController extends Controller
         $driverName = $credentialPlatform;
 
         // Pengecualian spesial untuk TikTok: Gunakan Master Credentials dari .env
+        // dan gunakan URI samaran agar terhindar dari pemblokiran kata "tiktok"
         if ($platform === 'tiktok') {
-            Config::set("services.{$driverName}.redirect", route('platform.callback', ['platform' => $platform]));
+            Config::set("services.{$driverName}.redirect", route('tt.callback.override'));
             return $driverName;
         }
 
