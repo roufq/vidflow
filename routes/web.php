@@ -15,7 +15,7 @@ Route::get('/', function () {
 
 // Halaman privasi dan TOS untuk lolos verifikasi bot/manual Meta dan TikTok
 Route::get('/privacy', function () {
-    return '
+    return <<<HTML
     <!DOCTYPE html>
     <html lang="en">
     <head>
@@ -60,7 +60,7 @@ Route::get('/privacy', function () {
         <p>If you have any questions or concerns regarding your privacy, data usage, or wish to request manual data deletion, please contact our system administrator.</p>
     </body>
     </html>
-    ';
+HTML;
 });
 
 Route::middleware(['auth', 'verified'])->group(function () {
