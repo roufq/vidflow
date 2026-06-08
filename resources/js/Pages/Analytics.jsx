@@ -1,7 +1,7 @@
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import { Head, usePage, useForm } from '@inertiajs/react';
 
-export default function Analytics({ totalUploads, activeConnections, totalViews, totalLikes }) {
+export default function Analytics({ totalUploads, activeConnections, totalViews, totalLikes, recentUploads }) {
     const user = usePage().props.auth.user;
     const { post, processing } = useForm();
 
@@ -91,15 +91,57 @@ export default function Analytics({ totalUploads, activeConnections, totalViews,
                     </div>
                 </div>
 
-                {/* Main Chart Mock */}
-                <div className="bg-[#111] border border-white/5 rounded-3xl p-7 shadow-lg min-h-[400px] flex items-center justify-center">
-                    <div className="text-center">
-                        <svg className="w-16 h-16 mx-auto mb-4 text-white/10" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>
-                        <h3 className="text-lg font-bold text-white mb-2">Data Analitik Terpusat (Coming Soon)</h3>
-                        <p className="text-slate-400 max-w-md mx-auto">
-                            Fitur grafik performa dan komparasi views antar platform saat ini sedang dalam pengembangan untuk rilis fase berikutnya.
-                        </p>
-                    </div>
+                {/* Details Table */}
+                <div className="bg-[#111] border border-white/5 rounded-3xl p-7 shadow-lg overflow-hidden">
+                    <h3 className="text-lg font-bold text-white mb-6">Detail Performa Video</h3>
+                    {recentUploads && recentUploads.length > 0 ? (
+                        <div className="overflow-x-auto">
+                            <table className="w-full text-left border-collapse">
+                                <thead>
+                                    <tr className="border-b border-white/10 text-sm font-semibold text-slate-400">
+                                        <th className="pb-3 pr-4 font-medium">Platform</th>
+                                        <th className="pb-3 pr-4 font-medium">Judul Video</th>
+                                        <th className="pb-3 pr-4 font-medium">Views</th>
+                                        <th className="pb-3 pr-4 font-medium">Likes</th>
+                                        <th className="pb-3 font-medium">Terakhir Sinkron</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {recentUploads.map((upload) => (
+                                        <tr key={upload.id} className="border-b border-white/5 hover:bg-white/5 transition-colors">
+                                            <td className="py-4 pr-4">
+                                                <span className={`inline-block px-3 py-1 text-xs font-semibold rounded-lg capitalize ${
+                                                    upload.platform === 'youtube' ? 'bg-red-500/10 text-red-400' :
+                                                    upload.platform === 'tiktok' ? 'bg-slate-800 text-white' :
+                                                    upload.platform === 'instagram' ? 'bg-pink-500/10 text-pink-400' :
+                                                    'bg-blue-500/10 text-blue-400'
+                                                }`}>
+                                                    {upload.platform}
+                                                </span>
+                                            </td>
+                                            <td className="py-4 pr-4 text-sm font-medium text-slate-200 truncate max-w-[200px]" title={upload.upload_job?.video_title}>
+                                                {upload.upload_job?.video_title || 'Video Upload'}
+                                            </td>
+                                            <td className="py-4 pr-4 text-sm font-bold text-white">
+                                                {upload.views.toLocaleString()}
+                                            </td>
+                                            <td className="py-4 pr-4 text-sm font-bold text-white">
+                                                {upload.likes.toLocaleString()}
+                                            </td>
+                                            <td className="py-4 text-xs text-slate-400">
+                                                {upload.last_synced_at ? new Date(upload.last_synced_at).toLocaleString('id-ID') : 'Belum pernah'}
+                                            </td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                        </div>
+                    ) : (
+                        <div className="text-center py-10">
+                            <svg className="w-16 h-16 mx-auto mb-4 text-white/10" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>
+                            <p className="text-slate-400">Belum ada data upload video yang sukses di platform.</p>
+                        </div>
+                    )}
                 </div>
             </div>
         </AuthenticatedLayout>

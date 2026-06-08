@@ -79,9 +79,13 @@ Route::middleware(['auth', 'verified'])->group(function () {
         $totalUploads = \App\Models\UploadJob::where('user_id', auth()->id())->count();
         $activeConnections = \App\Models\PlatformConnection::where('user_id', auth()->id())->count();
         
-        $uploads = \App\Models\PlatformUpload::whereHas('uploadJob', function($q) {
-            $q->where('user_id', auth()->id());
-        })->get();
+        $uploads = \App\Models\PlatformUpload::with('uploadJob:id,video_title')
+            ->whereHas('uploadJob', function($q) {
+                $q->where('user_id', auth()->id());
+            })
+            ->whereNotNull('platform_video_id')
+            ->orderByDesc('uploaded_at')
+            ->get();
         
         $totalViews = $uploads->sum('views');
         $totalLikes = $uploads->sum('likes');
@@ -91,6 +95,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
             'activeConnections' => $activeConnections,
             'totalViews' => $totalViews,
             'totalLikes' => $totalLikes,
+            'recentUploads' => $uploads
         ]);
     })->name('analytics');
 
