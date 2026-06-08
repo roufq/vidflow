@@ -119,8 +119,8 @@ export default function Analytics({ totalUploads, activeConnections, totalViews,
                                                     {upload.platform}
                                                 </span>
                                             </td>
-                                            <td className="py-4 pr-4 text-sm font-medium text-slate-200 truncate max-w-[200px]" title={upload.upload_job?.video_title}>
-                                                {upload.upload_job?.video_title || 'Video Upload'}
+                                            <td className="py-4 pr-4 text-sm font-medium text-slate-200 truncate max-w-[200px]" title={upload.upload_job?.title}>
+                                                {upload.upload_job?.title || 'Video Upload'}
                                             </td>
                                             <td className="py-4 pr-4 text-sm font-bold text-white">
                                                 {upload.views.toLocaleString()}

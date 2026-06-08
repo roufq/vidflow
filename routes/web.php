@@ -79,7 +79,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
         $totalUploads = \App\Models\UploadJob::where('user_id', auth()->id())->count();
         $activeConnections = \App\Models\PlatformConnection::where('user_id', auth()->id())->count();
         
-        $uploads = \App\Models\PlatformUpload::with('uploadJob:id,video_title')
+        $uploads = \App\Models\PlatformUpload::with('uploadJob:id,title')
             ->whereHas('uploadJob', function($q) {
                 $q->where('user_id', auth()->id());
             })
