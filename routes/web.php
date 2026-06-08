@@ -132,13 +132,13 @@ Route::middleware(['auth', 'verified'])->group(function () {
                 } elseif (in_array($upload->platform, ['facebook', 'instagram'])) {
                     $response = \Illuminate\Support\Facades\Http::withToken($connection->access_token)
                         ->get("https://graph.facebook.com/v19.0/{$upload->platform_video_id}", [
-                            'fields' => 'views,likes'
+                            'fields' => 'views,likes.summary(true)'
                         ]);
                     
                     if ($response->successful()) {
                         $stats = $response->json();
-                        $upload->views = $stats['views'] ?? $upload->views;
-                        $upload->likes = $stats['likes'] ?? $upload->likes;
+                        $upload->views = isset($stats['views']) ? $stats['views'] : 0;
+                        $upload->likes = isset($stats['likes']['summary']['total_count']) ? $stats['likes']['summary']['total_count'] : 0;
                     }
                 } elseif ($upload->platform === 'tiktok') {
                     $response = \Illuminate\Support\Facades\Http::withToken($connection->access_token)
