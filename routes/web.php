@@ -167,15 +167,6 @@ Route::middleware(['auth', 'verified'])->group(function () {
         return redirect()->back()->with('success', 'Sinkronisasi analitik berhasil ditarik dari platform (YouTube/Meta/TikTok)!');
     })->name('analytics.sync');
 
-    Route::get('/analytics/reset-dummy-data', function () {
-        \App\Models\PlatformUpload::whereHas('uploadJob', function($q) {
-            $q->where('user_id', auth()->id());
-        })->update([
-            'views' => 0,
-            'likes' => 0
-        ]);
-        return redirect()->route('analytics')->with('success', 'Data dummy berhasil di-reset ke 0.');
-    });
 
     Route::get('/history', [HistoryController::class, 'index'])->name('history');
     Route::post('/history/retry/{id}', [HistoryController::class, 'retry'])->name('history.retry');

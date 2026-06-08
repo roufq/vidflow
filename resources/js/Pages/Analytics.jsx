@@ -186,6 +186,11 @@ export default function Analytics({ totalUploads, activeConnections, totalViews,
                                             </td>
                                             <td className="py-4 pr-4 text-xs text-slate-400">
                                                 {upload.last_synced_at ? new Date(upload.last_synced_at).toLocaleString('id-ID') : 'Belum pernah'}
+                                                {upload.error_message && (
+                                                    <div className="mt-1 text-red-400 text-[10px] leading-tight max-w-[150px]" title={upload.error_message}>
+                                                        ⚠️ Gagal ditarik dari API (Arahkan kursor untuk detail)
+                                                    </div>
+                                                )}
                                             </td>
                                             <td className="py-4 text-right">
                                                 {upload.platform_url ? (
