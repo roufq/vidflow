@@ -42,19 +42,25 @@ Route::get('/privacy', function () {
         <p><strong>Last Updated:</strong> June 2026</p>
         
         <h2>1. Information We Collect</h2>
-        <p>We collect basic profile information (Name, Email) and OAuth access tokens required to publish videos to your connected social media channels. When you connect your TikTok account, we access your basic profile information and the ability to publish videos on your behalf via the TikTok API.</p>
+        <p>We collect basic profile information (Name, Email) and OAuth access tokens required to publish videos to your connected social media channels. When you connect your YouTube, Facebook, Instagram, or TikTok accounts, we access your basic profile information and the ability to publish videos on your behalf via their respective APIs.</p>
         
-        <h2>2. Use of TikTok Data</h2>
-        <p>VidFlow uses TikTok API services to facilitate video uploading and scheduling. We strictly use your TikTok data (access tokens) only to provide the upload functionality you request. We do not use your data for any other purposes, nor do we run automated scripts outside of your explicit upload commands.</p>
+        <h2>2. Use of Third-Party Data (Google, Meta, TikTok)</h2>
+        <p>VidFlow uses API services from Google (YouTube), Meta (Facebook & Instagram), and TikTok to facilitate video uploading and scheduling. We strictly use your data (access tokens) only to provide the upload functionality you request. We do not use your data for any other purposes, nor do we run automated scripts outside of your explicit upload commands.</p>
         
         <h2>3. Data Storage and Sharing</h2>
-        <p>Your OAuth tokens are securely encrypted in our database. We <strong>do not sell, rent, or share</strong> your personal information or TikTok data with any third parties or advertising networks.</p>
+        <p>Your OAuth tokens are securely encrypted in our database. We <strong>do not sell, rent, or share</strong> your personal information or connected account data with any third parties, AI models, or advertising networks.</p>
         
         <h2>4. Data Deletion and Revoking Access</h2>
-        <p>You can revoke VidFlow's access to your TikTok account and delete your data at any time by logging into your VidFlow dashboard and clicking the "Disconnect" button. Upon disconnection, all related access tokens and account references are permanently deleted from our servers. You may also revoke access directly through your TikTok account settings.</p>
+        <p>You can revoke VidFlow's access to your social media accounts and delete your data at any time by logging into your VidFlow dashboard and clicking the "Disconnect" button. Upon disconnection, all related access tokens and account references are permanently deleted from our servers.</p>
+        <p>Additionally, you can revoke access directly through the security settings of your respective Google, Facebook, Instagram, or TikTok accounts. For Google accounts, you can manage access via the <a href="https://myaccount.google.com/permissions" target="_blank">Google Security Settings</a>.</p>
         
         <h2>5. Third-Party Policies</h2>
-        <p>By using VidFlow to connect to TikTok, you also agree to be bound by the <a href="https://www.tiktok.com/legal/page/row/terms-of-service/en" target="_blank">TikTok Terms of Service</a> and the <a href="https://www.tiktok.com/legal/page/row/privacy-policy/en" target="_blank">TikTok Privacy Policy</a>.</p>
+        <p>By using VidFlow, you also agree to be bound by the Terms of Service and Privacy Policies of the platforms you connect:</p>
+        <ul>
+            <li><a href="https://www.youtube.com/t/terms" target="_blank">YouTube Terms of Service</a> and <a href="https://policies.google.com/privacy" target="_blank">Google Privacy Policy</a></li>
+            <li><a href="https://www.facebook.com/legal/terms" target="_blank">Meta/Facebook Terms of Service</a> and <a href="https://www.facebook.com/privacy/policy/" target="_blank">Privacy Policy</a></li>
+            <li><a href="https://www.tiktok.com/legal/page/row/terms-of-service/en" target="_blank">TikTok Terms of Service</a> and <a href="https://www.tiktok.com/legal/page/row/privacy-policy/en" target="_blank">Privacy Policy</a></li>
+        </ul>
         
         <h2>6. Contact Us</h2>
         <p>If you have any questions or concerns regarding your privacy, data usage, or wish to request manual data deletion, please contact our system administrator.</p>
