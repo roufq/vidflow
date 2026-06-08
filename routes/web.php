@@ -129,8 +129,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
                         $upload->views = $stats['viewCount'] ?? $upload->views;
                         $upload->likes = $stats['likeCount'] ?? $upload->likes;
                     }
-                } elseif (in_array($upload->platform, ['facebook', 'instagram'])) {
-                    // For Facebook/Instagram, videos are posted on Pages, so we need the Page Token.
+                } elseif ($upload->platform === 'facebook') {
                     $pagesResponse = \Illuminate\Support\Facades\Http::withToken($connection->access_token)
                         ->get('https://graph.facebook.com/v19.0/me/accounts');
                     
@@ -140,19 +139,53 @@ Route::middleware(['auth', 'verified'])->group(function () {
                         
                         $response = \Illuminate\Support\Facades\Http::withToken($pageToken)
                             ->get("https://graph.facebook.com/v19.0/{$upload->platform_video_id}", [
-                                'fields' => 'views,likes.summary(true)'
+                                'fields' => 'likes.summary(true)'
+                            ]);
+                            
+                        $insightsResponse = \Illuminate\Support\Facades\Http::withToken($pageToken)
+                            ->get("https://graph.facebook.com/v19.0/{$upload->platform_video_id}/video_insights/total_video_views");
+                        
+                        if ($response->successful()) {
+                            $stats = $response->json();
+                            $upload->likes = isset($stats['likes']['summary']['total_count']) ? $stats['likes']['summary']['total_count'] : 0;
+                            
+                            if ($insightsResponse->successful()) {
+                                $viewStats = $insightsResponse->json('data');
+                                $upload->views = isset($viewStats[0]['values'][0]['value']) ? $viewStats[0]['values'][0]['value'] : 0;
+                            } else {
+                                $upload->views = 0;
+                            }
+                            
+                            $upload->error_message = null;
+                        } else {
+                            $upload->error_message = 'FB API Error: ' . $response->json('error.message', 'Unknown error');
+                        }
+                    } else {
+                        $upload->error_message = 'FB Error: No pages found for this user.';
+                    }
+                } elseif ($upload->platform === 'instagram') {
+                    $pagesResponse = \Illuminate\Support\Facades\Http::withToken($connection->access_token)
+                        ->get('https://graph.facebook.com/v19.0/me/accounts');
+                    
+                    $pages = $pagesResponse->json('data');
+                    if (!empty($pages)) {
+                        $pageToken = $pages[0]['access_token'];
+                        
+                        $response = \Illuminate\Support\Facades\Http::withToken($pageToken)
+                            ->get("https://graph.facebook.com/v19.0/{$upload->platform_video_id}", [
+                                'fields' => 'like_count,comments_count'
                             ]);
                         
                         if ($response->successful()) {
                             $stats = $response->json();
-                            $upload->views = isset($stats['views']) ? $stats['views'] : 0;
-                            $upload->likes = isset($stats['likes']['summary']['total_count']) ? $stats['likes']['summary']['total_count'] : 0;
+                            $upload->likes = isset($stats['like_count']) ? $stats['like_count'] : 0;
+                            $upload->views = isset($stats['view_count']) ? $stats['view_count'] : 0;
                             $upload->error_message = null;
                         } else {
-                            $upload->error_message = 'Meta API Error: ' . $response->body();
+                            $upload->error_message = 'IG API Error: ' . $response->json('error.message', 'Unknown error');
                         }
                     } else {
-                        $upload->error_message = 'Meta Error: No pages found for this user.';
+                        $upload->error_message = 'IG Error: No pages found for this user.';
                     }
                 } elseif ($upload->platform === 'tiktok') {
                     $response = \Illuminate\Support\Facades\Http::withToken($connection->access_token)
