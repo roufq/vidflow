@@ -13,9 +13,7 @@ export default function AuthenticatedLayout({ header, children }) {
             {/* Sidebar */}
             <aside className="w-64 flex-shrink-0 border-r border-white/10 bg-[#111] hidden md:flex flex-col relative z-20">
                 <div className="h-16 flex items-center px-6 border-b border-white/10">
-                    <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-indigo-500 to-violet-600 shadow-lg shadow-indigo-500/30 overflow-hidden p-0.5">
-                        <img src="/vidflow-icon.png" alt="VidFlow Logo" className="w-full h-full object-contain drop-shadow-md" />
-                    </div>
+                    <img src="/vidflow-icon.png" alt="VidFlow Logo" className="h-8 w-8 object-contain drop-shadow-lg rounded-lg" />
                     <span className="ml-3 text-xl font-bold text-white tracking-tight">VidFlow</span>
                 </div>
                 
