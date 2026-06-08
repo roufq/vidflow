@@ -1,15 +1,29 @@
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import { Head, usePage, useForm } from '@inertiajs/react';
+import { useState, useMemo } from 'react';
 
-export default function Analytics({ totalUploads, activeConnections, totalViews, totalLikes, recentUploads }) {
+export default function Analytics({ totalUploads, activeConnections, totalViews, totalLikes, recentUploads, connectionsList }) {
     const user = usePage().props.auth.user;
     const { post, processing } = useForm();
+    
+    const [filterPlatform, setFilterPlatform] = useState('all');
+    const [filterAccount, setFilterAccount] = useState('all');
 
     const handleSync = () => {
         post(route('analytics.sync'), {
             preserveScroll: true
         });
     };
+
+    const filteredUploads = useMemo(() => {
+        return recentUploads.filter(upload => {
+            const matchPlatform = filterPlatform === 'all' || upload.platform === filterPlatform;
+            const matchAccount = filterAccount === 'all' || upload.connection_id === filterAccount;
+            return matchPlatform && matchAccount;
+        });
+    }, [recentUploads, filterPlatform, filterAccount]);
+
+    const uniquePlatforms = [...new Set(connectionsList.map(c => c.platform))];
 
     return (
         <AuthenticatedLayout header="Analytics Overview">
@@ -93,31 +107,73 @@ export default function Analytics({ totalUploads, activeConnections, totalViews,
 
                 {/* Details Table */}
                 <div className="bg-[#111] border border-white/5 rounded-3xl p-7 shadow-lg overflow-hidden">
-                    <h3 className="text-lg font-bold text-white mb-6">Detail Performa Video</h3>
-                    {recentUploads && recentUploads.length > 0 ? (
+                    <div className="flex flex-col md:flex-row md:items-center justify-between mb-6 gap-4">
+                        <h3 className="text-lg font-bold text-white">Detail Performa Video</h3>
+                        
+                        {/* Filters */}
+                        <div className="flex flex-wrap items-center gap-3">
+                            <select 
+                                value={filterPlatform}
+                                onChange={(e) => {
+                                    setFilterPlatform(e.target.value);
+                                    setFilterAccount('all'); // Reset account filter when platform changes
+                                }}
+                                className="bg-[#1a1a1a] border border-white/10 text-white text-sm rounded-xl px-4 py-2 focus:ring-indigo-500 focus:border-indigo-500"
+                            >
+                                <option value="all">Semua Platform</option>
+                                {uniquePlatforms.map(platform => (
+                                    <option key={platform} value={platform} className="capitalize">{platform}</option>
+                                ))}
+                            </select>
+
+                            <select 
+                                value={filterAccount}
+                                onChange={(e) => setFilterAccount(e.target.value)}
+                                className="bg-[#1a1a1a] border border-white/10 text-white text-sm rounded-xl px-4 py-2 focus:ring-indigo-500 focus:border-indigo-500"
+                            >
+                                <option value="all">Semua Akun</option>
+                                {connectionsList
+                                    .filter(c => filterPlatform === 'all' || c.platform === filterPlatform)
+                                    .map(conn => (
+                                        <option key={conn.id} value={conn.id}>
+                                            {conn.platform_username || 'Unknown User'} ({conn.platform})
+                                        </option>
+                                    ))
+                                }
+                            </select>
+                        </div>
+                    </div>
+
+                    {filteredUploads && filteredUploads.length > 0 ? (
                         <div className="overflow-x-auto">
                             <table className="w-full text-left border-collapse">
                                 <thead>
                                     <tr className="border-b border-white/10 text-sm font-semibold text-slate-400">
-                                        <th className="pb-3 pr-4 font-medium">Platform</th>
+                                        <th className="pb-3 pr-4 font-medium">Platform & Akun</th>
                                         <th className="pb-3 pr-4 font-medium">Judul Video</th>
                                         <th className="pb-3 pr-4 font-medium">Views</th>
                                         <th className="pb-3 pr-4 font-medium">Likes</th>
-                                        <th className="pb-3 font-medium">Terakhir Sinkron</th>
+                                        <th className="pb-3 pr-4 font-medium">Terakhir Sinkron</th>
+                                        <th className="pb-3 font-medium text-right">Link</th>
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    {recentUploads.map((upload) => (
+                                    {filteredUploads.map((upload) => (
                                         <tr key={upload.id} className="border-b border-white/5 hover:bg-white/5 transition-colors">
                                             <td className="py-4 pr-4">
-                                                <span className={`inline-block px-3 py-1 text-xs font-semibold rounded-lg capitalize ${
-                                                    upload.platform === 'youtube' ? 'bg-red-500/10 text-red-400' :
-                                                    upload.platform === 'tiktok' ? 'bg-slate-800 text-white' :
-                                                    upload.platform === 'instagram' ? 'bg-pink-500/10 text-pink-400' :
-                                                    'bg-blue-500/10 text-blue-400'
-                                                }`}>
-                                                    {upload.platform}
-                                                </span>
+                                                <div className="flex flex-col items-start gap-1">
+                                                    <span className={`inline-block px-3 py-1 text-xs font-semibold rounded-lg capitalize ${
+                                                        upload.platform === 'youtube' ? 'bg-red-500/10 text-red-400' :
+                                                        upload.platform === 'tiktok' ? 'bg-slate-800 text-white' :
+                                                        upload.platform === 'instagram' ? 'bg-pink-500/10 text-pink-400' :
+                                                        'bg-blue-500/10 text-blue-400'
+                                                    }`}>
+                                                        {upload.platform}
+                                                    </span>
+                                                    <span className="text-xs text-slate-400">
+                                                        @{upload.connection?.platform_username || 'unknown'}
+                                                    </span>
+                                                </div>
                                             </td>
                                             <td className="py-4 pr-4 text-sm font-medium text-slate-200 truncate max-w-[200px]" title={upload.upload_job?.title}>
                                                 {upload.upload_job?.title || 'Video Upload'}
@@ -128,8 +184,23 @@ export default function Analytics({ totalUploads, activeConnections, totalViews,
                                             <td className="py-4 pr-4 text-sm font-bold text-white">
                                                 {upload.likes.toLocaleString()}
                                             </td>
-                                            <td className="py-4 text-xs text-slate-400">
+                                            <td className="py-4 pr-4 text-xs text-slate-400">
                                                 {upload.last_synced_at ? new Date(upload.last_synced_at).toLocaleString('id-ID') : 'Belum pernah'}
+                                            </td>
+                                            <td className="py-4 text-right">
+                                                {upload.platform_url ? (
+                                                    <a 
+                                                        href={upload.platform_url} 
+                                                        target="_blank" 
+                                                        rel="noopener noreferrer"
+                                                        className="inline-flex p-2 bg-white/5 hover:bg-indigo-500/20 text-slate-400 hover:text-indigo-400 rounded-lg transition-colors"
+                                                        title="Buka Postingan"
+                                                    >
+                                                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" /></svg>
+                                                    </a>
+                                                ) : (
+                                                    <span className="text-xs text-slate-500">-</span>
+                                                )}
                                             </td>
                                         </tr>
                                     ))}

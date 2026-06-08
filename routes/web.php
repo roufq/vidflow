@@ -79,7 +79,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
         $totalUploads = \App\Models\UploadJob::where('user_id', auth()->id())->count();
         $activeConnections = \App\Models\PlatformConnection::where('user_id', auth()->id())->count();
         
-        $uploads = \App\Models\PlatformUpload::with('uploadJob:id,title')
+        $connectionsList = \App\Models\PlatformConnection::where('user_id', auth()->id())->get();
+        
+        $uploads = \App\Models\PlatformUpload::with(['uploadJob:id,title', 'connection'])
             ->whereHas('uploadJob', function($q) {
                 $q->where('user_id', auth()->id());
             })
@@ -95,7 +97,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
             'activeConnections' => $activeConnections,
             'totalViews' => $totalViews,
             'totalLikes' => $totalLikes,
-            'recentUploads' => $uploads
+            'recentUploads' => $uploads,
+            'connectionsList' => $connectionsList
         ]);
     })->name('analytics');
 
@@ -110,12 +113,52 @@ Route::middleware(['auth', 'verified'])->group(function () {
         // - Meta Graph API: /{video_id}?fields=views,likes
         // - TikTok API: /video/query/
         foreach ($uploads as $upload) {
-            // For now, as a placeholder for the API calls to avoid rate limits during testing,
-            // we simulate fetching new data if it's been more than an hour since last sync.
-            $upload->views += rand(50, 200); 
-            $upload->likes += rand(5, 30);
-            $upload->last_synced_at = now();
-            $upload->save();
+            $connection = \App\Models\PlatformConnection::find($upload->connection_id);
+            if (!$connection) continue;
+
+            try {
+                if ($upload->platform === 'youtube') {
+                    $response = \Illuminate\Support\Facades\Http::withToken($connection->access_token)
+                        ->get('https://www.googleapis.com/youtube/v3/videos', [
+                            'part' => 'statistics',
+                            'id' => $upload->platform_video_id
+                        ]);
+                    
+                    if ($response->successful() && isset($response->json()['items'][0]['statistics'])) {
+                        $stats = $response->json()['items'][0]['statistics'];
+                        $upload->views = $stats['viewCount'] ?? $upload->views;
+                        $upload->likes = $stats['likeCount'] ?? $upload->likes;
+                    }
+                } elseif (in_array($upload->platform, ['facebook', 'instagram'])) {
+                    $response = \Illuminate\Support\Facades\Http::withToken($connection->access_token)
+                        ->get("https://graph.facebook.com/v19.0/{$upload->platform_video_id}", [
+                            'fields' => 'views,likes'
+                        ]);
+                    
+                    if ($response->successful()) {
+                        $stats = $response->json();
+                        $upload->views = $stats['views'] ?? $upload->views;
+                        $upload->likes = $stats['likes'] ?? $upload->likes;
+                    }
+                } elseif ($upload->platform === 'tiktok') {
+                    $response = \Illuminate\Support\Facades\Http::withToken($connection->access_token)
+                        ->post('https://open.tiktokapis.com/v2/video/query/?fields=view_count,like_count', [
+                            'filters' => ['video_ids' => [$upload->platform_video_id]]
+                        ]);
+
+                    if ($response->successful() && isset($response->json()['data']['videos'][0])) {
+                        $stats = $response->json()['data']['videos'][0];
+                        $upload->views = $stats['view_count'] ?? $upload->views;
+                        $upload->likes = $stats['like_count'] ?? $upload->likes;
+                    }
+                }
+
+                $upload->last_synced_at = now();
+                $upload->save();
+            } catch (\Exception $e) {
+                \Illuminate\Support\Facades\Log::error('Analytics sync failed for platform: ' . $upload->platform . ' Error: ' . $e->getMessage());
+                // Silently continue for other uploads
+            }
         }
 
         return redirect()->back()->with('success', 'Sinkronisasi analitik berhasil ditarik dari platform (YouTube/Meta/TikTok)!');
