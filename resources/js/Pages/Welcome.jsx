@@ -28,24 +28,43 @@ export default function Welcome({ auth }) {
                         {auth.user ? (
                             <Link
                                 href={route('dashboard')}
-                                className="text-sm font-semibold text-white bg-white/10 hover:bg-white/20 px-5 py-2.5 rounded-full transition-all border border-white/10 backdrop-blur-md"
+                                className="text-sm font-semibold text-white bg-white/10 hover:bg-white/20 px-4 py-2 sm:px-5 sm:py-2.5 rounded-full transition-all border border-white/10 backdrop-blur-md"
                             >
                                 Masuk Dashboard
                             </Link>
                         ) : (
                             <>
-                                <Link
-                                    href={route('login')}
-                                    className="hidden sm:block text-sm font-semibold text-slate-300 hover:text-white px-4 py-2 transition-colors"
-                                >
-                                    Log in
-                                </Link>
-                                <Link
-                                    href={route('register')}
-                                    className="text-sm font-semibold text-white bg-indigo-600 hover:bg-indigo-500 px-6 py-2.5 rounded-full transition-all shadow-[0_0_20px_rgba(79,70,229,0.3)] hover:shadow-[0_0_25px_rgba(79,70,229,0.5)]"
-                                >
-                                    Daftar Gratis
-                                </Link>
+                                {/* Desktop */}
+                                <div className="hidden sm:flex items-center gap-4">
+                                    <Link
+                                        href={route('login')}
+                                        className="text-sm font-semibold text-slate-300 hover:text-white px-4 py-2 transition-colors"
+                                    >
+                                        Log in
+                                    </Link>
+                                    <Link
+                                        href={route('register')}
+                                        className="text-sm font-semibold text-white bg-indigo-600 hover:bg-indigo-500 px-6 py-2.5 rounded-full transition-all shadow-[0_0_20px_rgba(79,70,229,0.3)] hover:shadow-[0_0_25px_rgba(79,70,229,0.5)]"
+                                    >
+                                        Daftar Gratis
+                                    </Link>
+                                </div>
+                                
+                                {/* Mobile */}
+                                <div className="sm:hidden flex items-center bg-white/5 p-1 rounded-full border border-white/10">
+                                    <Link
+                                        href={route('login')}
+                                        className="text-xs font-semibold text-slate-300 hover:text-white px-4 py-2 transition-colors rounded-full"
+                                    >
+                                        Log in
+                                    </Link>
+                                    <Link
+                                        href={route('register')}
+                                        className="text-xs font-semibold text-white bg-indigo-600 hover:bg-indigo-500 px-4 py-2 rounded-full transition-all shadow-lg shadow-indigo-500/30"
+                                    >
+                                        Daftar
+                                    </Link>
+                                </div>
                             </>
                         )}
                     </div>
@@ -258,8 +277,8 @@ export default function Welcome({ auth }) {
                                     answer="Tidak. Anda bebas berlangganan bulanan dan membatalkannya kapan saja tanpa biaya penalti."
                                 />
                                 <FAQItem 
-                                    question="Saya menggunakan paket Free, apakah saya butuh API Key sendiri?"
-                                    answer="Tidak perlu pusing urusan teknis. Anda bisa langsung menghubungkan akun dan mempublikasikan video menggunakan infrastruktur master yang telah kami sediakan."
+                                    question="Apakah saya butuh API Key (App ID / Secret) sendiri?"
+                                    answer="Ya. Untuk menjaga keamanan, kebebasan, dan menghindari limitasi (pemblokiran) dari sistem Meta dan Google, setiap pengguna diwajibkan untuk menghubungkan App ID dan App Secret milik mereka sendiri. Kami menyediakan panduan lengkap cara mendapatkannya dengan mudah."
                                 />
                                 <FAQItem 
                                     question="Berapa lama video akan tersimpan di VidFlow?"

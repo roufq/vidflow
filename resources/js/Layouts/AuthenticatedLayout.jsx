@@ -10,8 +10,16 @@ export default function AuthenticatedLayout({ header, children }) {
 
     return (
         <div className="flex h-screen bg-[#0a0a0a] text-slate-300 font-sans selection:bg-indigo-500/30">
+            {/* Mobile Sidebar Overlay */}
+            {sidebarOpen && (
+                <div 
+                    className="fixed inset-0 bg-black/60 backdrop-blur-sm z-40 md:hidden"
+                    onClick={() => setSidebarOpen(false)}
+                ></div>
+            )}
+
             {/* Sidebar */}
-            <aside className="w-64 flex-shrink-0 border-r border-white/10 bg-[#111] hidden md:flex flex-col relative z-20">
+            <aside className={`fixed inset-y-0 left-0 w-64 bg-[#111] border-r border-white/10 transform transition-transform duration-300 ease-in-out z-50 md:relative md:translate-x-0 flex flex-col flex-shrink-0 ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}`}>
                 <div className="h-16 flex items-center px-6 border-b border-white/10">
                     <img src="/vidflow-icon.png" alt="VidFlow Logo" className="h-8 w-8 object-contain drop-shadow-lg rounded-lg" />
                     <span className="ml-3 text-xl font-bold text-white tracking-tight">VidFlow</span>
@@ -66,8 +74,11 @@ export default function AuthenticatedLayout({ header, children }) {
                 
                 <header className="h-16 flex items-center justify-between px-6 border-b border-white/10 bg-[#0a0a0a]/80 backdrop-blur-md z-30 sticky top-0">
                     <div className="flex items-center gap-3">
-                        {/* Mobile Menu Toggle (future) */}
-                        <button className="md:hidden text-slate-400 hover:text-white transition-colors">
+                        {/* Mobile Menu Toggle */}
+                        <button 
+                            onClick={() => setSidebarOpen(true)}
+                            className="md:hidden text-slate-400 hover:text-white transition-colors"
+                        >
                             <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6h16M4 12h16M4 18h16"/></svg>
                         </button>
                         <h1 className="text-lg font-bold text-white tracking-tight">{header || 'Dashboard'}</h1>
