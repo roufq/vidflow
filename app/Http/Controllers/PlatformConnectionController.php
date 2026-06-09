@@ -61,8 +61,15 @@ class PlatformConnectionController extends Controller
             Config::set("services.{$driverName}.client_secret", $credential->app_secret);
             Config::set("services.{$driverName}.redirect", route('platform.callback', ['platform' => $platform]));
         } else {
-            // Force them to input it for ALL platforms
-            abort(403, 'Anda harus mengatur App ID / Client ID dan Secret untuk ' . ucfirst($platform) . ' terlebih dahulu sebelum menghubungkan akun.');
+            // Fallback ke Master Credentials (diatur di .env oleh Admin)
+            $defaultClientId = config("services.{$driverName}.client_id");
+            
+            if (!$defaultClientId) {
+                // Jika Admin juga belum mengatur master credential, baru tampilkan error
+                abort(403, 'Anda harus mengatur App ID / Client ID dan Secret untuk ' . ucfirst($platform) . ' terlebih dahulu sebelum menghubungkan akun.');
+            } else {
+                Config::set("services.{$driverName}.redirect", route('platform.callback', ['platform' => $platform]));
+            }
         }
         
         return $driverName;

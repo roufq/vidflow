@@ -10,7 +10,10 @@ use App\Http\Controllers\HistoryController;
 use App\Http\Controllers\WebhookController;
 
 Route::get('/', function () {
-    return redirect()->route('login');
+    return Inertia::render('Welcome', [
+        'canLogin' => Route::has('login'),
+        'canRegister' => Route::has('register'),
+    ]);
 });
 
 // Halaman privasi dan TOS untuk lolos verifikasi bot/manual Meta dan TikTok
