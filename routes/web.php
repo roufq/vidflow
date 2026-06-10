@@ -16,7 +16,7 @@ Route::get('/', function () {
     ]);
 });
 
-// Halaman privasi dan TOS untuk lolos verifikasi bot/manual Meta dan TikTok
+// Halaman Privacy Policy
 Route::get('/privacy', function () {
     return <<<HTML
     <!DOCTYPE html>
@@ -24,7 +24,7 @@ Route::get('/privacy', function () {
     <head>
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>Terms of Service & Privacy Policy - VidFlow</title>
+        <title>Privacy Policy - VidFlow</title>
         <style>
             body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; line-height: 1.6; color: #333; max-width: 800px; margin: 0 auto; padding: 2rem; }
             h1 { color: #111; border-bottom: 1px solid #eee; padding-bottom: 0.5rem; }
@@ -33,15 +33,7 @@ Route::get('/privacy', function () {
         </style>
     </head>
     <body>
-        <h1>VidFlow Terms of Service</h1>
-        <p><strong>Last Updated:</strong> June 2026</p>
-        <p>Welcome to VidFlow. By using our service, you agree to these terms. VidFlow is a video management and scheduling dashboard designed to help users upload content to various social media platforms.</p>
-        <h2>1. User Responsibilities</h2>
-        <p>You must ensure that any video content you upload via VidFlow complies with the copyright laws and the community guidelines of the respective platforms (YouTube, Facebook, Instagram, TikTok).</p>
-        <h2>2. API Services</h2>
-        <p>Our application uses API services from YouTube, Meta, and TikTok. By authenticating your accounts, you grant us permission to publish videos on your behalf. We do not use your account for any other automated actions.</p>
-
-        <h1 style="margin-top: 3rem;">VidFlow Privacy Policy</h1>
+        <h1>VidFlow Privacy Policy</h1>
         <p><strong>Last Updated:</strong> June 2026</p>
         
         <h2>1. Information We Collect</h2>
@@ -58,15 +50,51 @@ Route::get('/privacy', function () {
         <p>Additionally, you can revoke access directly through the security settings of your respective Google, Facebook, Instagram, or TikTok accounts. For Google accounts, you can manage access via the <a href="https://myaccount.google.com/permissions" target="_blank">Google Security Settings</a>.</p>
         
         <h2>5. Third-Party Policies</h2>
-        <p>By using VidFlow, you also agree to be bound by the Terms of Service and Privacy Policies of the platforms you connect:</p>
+        <p>By using VidFlow to connect to third-party platforms, you also agree to their respective privacy policies:</p>
         <ul>
-            <li><a href="https://www.youtube.com/t/terms" target="_blank">YouTube Terms of Service</a> and <a href="https://policies.google.com/privacy" target="_blank">Google Privacy Policy</a></li>
-            <li><a href="https://www.facebook.com/legal/terms" target="_blank">Meta/Facebook Terms of Service</a> and <a href="https://www.facebook.com/privacy/policy/" target="_blank">Privacy Policy</a></li>
-            <li><a href="https://www.tiktok.com/legal/page/row/terms-of-service/en" target="_blank">TikTok Terms of Service</a> and <a href="https://www.tiktok.com/legal/page/row/privacy-policy/en" target="_blank">Privacy Policy</a></li>
+            <li><a href="https://policies.google.com/privacy" target="_blank">Google Privacy Policy</a></li>
+            <li><a href="https://www.facebook.com/privacy/policy/" target="_blank">Meta Privacy Policy</a></li>
+            <li><a href="https://www.tiktok.com/legal/page/row/privacy-policy/en" target="_blank">TikTok Privacy Policy</a></li>
         </ul>
         
-        <h2>6. Contact Us</h2>
-        <p>If you have any questions or concerns regarding your privacy, data usage, or wish to request manual data deletion, please contact our system administrator.</p>
+        <p style="margin-top: 3rem; font-size: 0.9em; color: #666;">
+            Contact us: roufq@vidflow.my.id
+        </p>
+    </body>
+    </html>
+HTML;
+});
+
+// Halaman Terms of Service
+Route::get('/terms', function () {
+    return <<<HTML
+    <!DOCTYPE html>
+    <html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Terms of Service - VidFlow</title>
+        <style>
+            body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; line-height: 1.6; color: #333; max-width: 800px; margin: 0 auto; padding: 2rem; }
+            h1 { color: #111; border-bottom: 1px solid #eee; padding-bottom: 0.5rem; }
+            h2 { color: #444; margin-top: 2rem; }
+            p { margin-bottom: 1rem; }
+        </style>
+    </head>
+    <body>
+        <h1>VidFlow Terms of Service</h1>
+        <p><strong>Last Updated:</strong> June 2026</p>
+        <p>Welcome to VidFlow. By using our service, you agree to these terms. VidFlow is a video management and scheduling dashboard designed to help users upload content to various social media platforms.</p>
+        <h2>1. User Responsibilities</h2>
+        <p>You must ensure that any video content you upload via VidFlow complies with the copyright laws and the community guidelines of the respective platforms (YouTube, Facebook, Instagram, TikTok).</p>
+        <h2>2. API Services</h2>
+        <p>Our application uses API services from YouTube, Meta, and TikTok. By authenticating your accounts, you grant us permission to publish videos on your behalf. We do not use your account for any other automated actions.</p>
+        <h2>3. YouTube Terms of Service</h2>
+        <p>By using our service to connect to YouTube, you agree to be bound by the <a href="https://www.youtube.com/t/terms" target="_blank">YouTube Terms of Service</a>.</p>
+        
+        <p style="margin-top: 3rem; font-size: 0.9em; color: #666;">
+            Contact us: roufq@vidflow.my.id
+        </p>
     </body>
     </html>
 HTML;
