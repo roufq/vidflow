@@ -109,25 +109,61 @@
 
         <!-- Business Model Transformation -->
         <section class="mb-10 page-break">
-            <h3 class="text-xl font-bold text-slate-800 border-l-4 border-indigo-500 pl-3 mb-4">3. Transformasi Model Bisnis (Monetisasi)</h3>
+            <h3 class="text-xl font-bold text-slate-800 border-l-4 border-indigo-500 pl-3 mb-4">3. Transformasi Model Bisnis & Keuangan (Monetisasi)</h3>
             <p class="text-slate-600 leading-relaxed mb-4">
-                Operasional AI memiliki biaya per panggilan API (Transkripsi, LLM, Rendering). Oleh karena itu, skema berlangganan VidFlow harus diubah dari model "Paket Biasa" menjadi <strong>Sistem Kredit (Credit-Based System)</strong> untuk mencegah kerugian operasional.
+                Operasional AI memiliki biaya per panggilan API (Transkripsi, LLM, Rendering). Untuk melindungi perusahaan dari kebangkrutan akibat tagihan API yang membengkak, VidFlow <strong>dilarang keras menjual paket "Unlimited"</strong>. Skema harus diubah menjadi <strong>Sistem Kredit (Pay-As-You-Go)</strong>.
             </p>
             
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                <!-- Cost Breakdown -->
+                <div class="bg-red-50 p-6 rounded-xl border border-red-100">
+                    <h4 class="font-bold text-red-800 text-lg mb-3">Estimasi Modal API (HPP)</h4>
+                    <p class="text-xs text-red-600 mb-3">Biaya memproses <strong>1 Menit Video</strong>:</p>
+                    <ul class="text-sm text-slate-700 space-y-2 list-disc pl-5">
+                        <li><strong>Transkrip (Deepgram):</strong> ~$0.004 / menit</li>
+                        <li><strong>Otak AI (GPT-4o-mini):</strong> ~$0.001 / menit</li>
+                        <li><strong>Video Render (Shotstack):</strong> ~$0.075 / menit</li>
+                        <li class="font-bold text-red-700 pt-2 border-t border-red-200">Total Modal: ~$0.08 (Rp 1.280) per Menit</li>
+                    </ul>
+                </div>
+
+                <!-- Profit Calculation -->
+                <div class="bg-emerald-50 p-6 rounded-xl border border-emerald-100">
+                    <h4 class="font-bold text-emerald-800 text-lg mb-3">Proyeksi Keuntungan (Per User)</h4>
+                    <p class="text-xs text-emerald-600 mb-3">Contoh: Menjual Paket <strong>$15 (Rp 240.000)</strong>/bulan</p>
+                    <ul class="text-sm text-slate-700 space-y-2 list-none">
+                        <li class="flex justify-between border-b border-emerald-200 pb-1"><span>Harga Jual:</span> <strong class="text-emerald-700">Rp 240.000</strong></li>
+                        <li class="flex justify-between border-b border-emerald-200 pb-1"><span>Jatah Diberikan:</span> <strong>100 Menit (100 Kredit)</strong></li>
+                        <li class="flex justify-between border-b border-emerald-200 pb-1"><span>Maksimal Modal (API):</span> <strong class="text-red-600">Rp 128.000</strong></li>
+                        <li class="flex justify-between pt-1"><span><strong>Net Profit Minimum:</strong></span> <strong class="text-emerald-700">Rp 112.000 (46%)</strong></li>
+                    </ul>
+                </div>
+            </div>
+
             <div class="bg-slate-800 text-white p-6 rounded-xl">
-                <h4 class="font-bold text-lg mb-3 text-indigo-300">Rekomendasi Skema Kredit:</h4>
-                <ul class="space-y-3 text-sm">
+                <h4 class="font-bold text-lg mb-3 text-indigo-300">Sistem Perlindungan Modal (Credit & Top-Up Logic)</h4>
+                <p class="text-sm text-slate-300 mb-4">Mekanisme ini memastikan pengeluaran operasional selalu dibayar <em>di muka</em> oleh pelanggan.</p>
+                <ul class="space-y-4 text-sm">
                     <li class="flex items-start">
-                        <span class="mr-2">💡</span>
-                        <span><strong>1 Kredit = 1 Menit Video Asli.</strong> Jika pengguna mengunggah video 30 menit, saldo terpotong 30 kredit di muka, terlepas dari berapa banyak klip yang dihasilkan.</span>
+                        <span class="mr-3 text-xl">🔋</span>
+                        <div>
+                            <strong>Pembakaran Kredit (Burn Rate):</strong>
+                            <p class="text-slate-400 mt-1">Setiap kali pengguna menekan tombol <em>"Generate to Clip"</em>, sistem mengecek durasi video asli. Jika video berdurasi 30 menit, sistem langsung memotong 30 Kredit dari saldo pengguna.</p>
+                        </div>
                     </li>
                     <li class="flex items-start">
-                        <span class="mr-2">💡</span>
-                        <span><strong>Paket Basic ($15/bln):</strong> Mendapatkan 150 Kredit (150 menit pemrosesan). Cukup untuk 2-3 Podcast per bulan.</span>
+                        <span class="mr-3 text-xl">🛑</span>
+                        <div>
+                            <strong>Kunci Otomatis (Auto-Lock):</strong>
+                            <p class="text-slate-400 mt-1">Jika sisa kredit pengguna (misal: 10 Kredit) lebih kecil dari durasi video yang diunggah (misal: 20 menit), tombol <em>Generate</em> akan terkunci. Hal ini mencegah tagihan API terus berjalan.</p>
+                        </div>
                     </li>
                     <li class="flex items-start">
-                        <span class="mr-2">💡</span>
-                        <span><strong>Paket Pro ($29/bln):</strong> Mendapatkan 300 Kredit + Fitur Auto-Schedule ke semua Sosmed.</span>
+                        <span class="mr-3 text-xl">💳</span>
+                        <div>
+                            <strong>Siklus Top-Up (Pay-As-You-Go):</strong>
+                            <p class="text-slate-400 mt-1">Jika kredit habis di pertengahan bulan, pengguna diwajibkan membeli paket <em>Add-on Top-Up</em> (misal: Beli 50 Kredit tambahan seharga $10). Ini menciptakan sumber pendapatan berulang ganda dari satu pengguna yang sama.</p>
+                        </div>
                     </li>
                 </ul>
             </div>
