@@ -3,6 +3,7 @@
     <head>
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta name="google-site-verification" content="ba-02ZXagnCKrtGWmCl8rD9qIcpWmyBXDwHG_L6_aDo" />
 
         <title inertia>{{ config('app.name', 'VidFlow') }}</title>
 
