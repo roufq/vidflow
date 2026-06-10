@@ -58,7 +58,7 @@ Route::get('/privacy', function () {
         </ul>
         
         <p style="margin-top: 3rem; font-size: 0.9em; color: #666;">
-            Contact us: roufq@vidflow.my.id
+            Contact us: roufmawanto194@gmail.com
         </p>
     </body>
     </html>
@@ -89,11 +89,16 @@ Route::get('/terms', function () {
         <p>You must ensure that any video content you upload via VidFlow complies with the copyright laws and the community guidelines of the respective platforms (YouTube, Facebook, Instagram, TikTok).</p>
         <h2>2. API Services</h2>
         <p>Our application uses API services from YouTube, Meta, and TikTok. By authenticating your accounts, you grant us permission to publish videos on your behalf. We do not use your account for any other automated actions.</p>
-        <h2>3. YouTube Terms of Service</h2>
-        <p>By using our service to connect to YouTube, you agree to be bound by the <a href="https://www.youtube.com/t/terms" target="_blank">YouTube Terms of Service</a>.</p>
+        <h2>3. Third-Party Terms of Service</h2>
+        <p>By using VidFlow to connect to third-party platforms, you also agree to be bound by their respective Terms of Service:</p>
+        <ul>
+            <li><a href="https://www.youtube.com/t/terms" target="_blank">YouTube Terms of Service</a></li>
+            <li><a href="https://www.facebook.com/legal/terms" target="_blank">Meta/Facebook Terms of Service</a></li>
+            <li><a href="https://www.tiktok.com/legal/page/row/terms-of-service/en" target="_blank">TikTok Terms of Service</a></li>
+        </ul>
         
         <p style="margin-top: 3rem; font-size: 0.9em; color: #666;">
-            Contact us: roufq@vidflow.my.id
+            Contact us: roufmawanto194@gmail.com
         </p>
     </body>
     </html>
