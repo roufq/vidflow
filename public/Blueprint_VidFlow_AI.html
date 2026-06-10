@@ -111,31 +111,33 @@
         <section class="mb-10 page-break">
             <h3 class="text-xl font-bold text-slate-800 border-l-4 border-indigo-500 pl-3 mb-4">3. Transformasi Model Bisnis & Keuangan (Monetisasi)</h3>
             <p class="text-slate-600 leading-relaxed mb-4">
-                Operasional AI memiliki biaya per panggilan API (Transkripsi, LLM, Rendering). Untuk melindungi perusahaan dari kebangkrutan akibat tagihan API yang membengkak, VidFlow <strong>dilarang keras menjual paket "Unlimited"</strong>. Skema harus diubah menjadi <strong>Sistem Kredit (Pay-As-You-Go)</strong>.
+                Untuk memaksimalkan keuntungan dan fleksibilitas, model bisnis VidFlow dibagi menjadi dua pilar utama (Modular SaaS):<br><br>
+                <strong>1. Layanan Inti (Core Subscription):</strong> Pelanggan membayar biaya bulanan (misal $10/bulan) murni untuk menggunakan fitur penjadwalan dan <em>Auto-Upload</em> video ke berbagai sosial media.<br>
+                <strong>2. Layanan Tambahan (AI Generate Add-on):</strong> Fitur "Generate to Clip" tidak bersifat <em>unlimited</em>. Fitur ini menggunakan <strong>Sistem Kredit (Pay-As-You-Go)</strong>. Pelanggan hanya membayar saat mereka menggunakannya dengan cara melakukan <em>Top-Up</em> saldo kredit. Hal ini melindungi Anda dari kerugian akibat tagihan API (Transkripsi, LLM, Rendering) yang membengkak.
             </p>
             
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
                 <!-- Cost Breakdown -->
                 <div class="bg-red-50 p-6 rounded-xl border border-red-100">
-                    <h4 class="font-bold text-red-800 text-lg mb-3">Estimasi Modal API (HPP)</h4>
-                    <p class="text-xs text-red-600 mb-3">Biaya memproses <strong>1 Menit Video</strong>:</p>
+                    <h4 class="font-bold text-red-800 text-lg mb-3">Estimasi Modal Dasar (HPP)</h4>
+                    <p class="text-xs text-red-600 mb-3">Biaya murni API untuk memproses <strong>1 Menit Video</strong> ($1 = Rp 16.000):</p>
                     <ul class="text-sm text-slate-700 space-y-2 list-disc pl-5">
-                        <li><strong>Transkrip (Deepgram):</strong> ~$0.004 / menit</li>
-                        <li><strong>Otak AI (GPT-4o-mini):</strong> ~$0.001 / menit</li>
-                        <li><strong>Video Render (Shotstack):</strong> ~$0.075 / menit</li>
-                        <li class="font-bold text-red-700 pt-2 border-t border-red-200">Total Modal: ~$0.08 (Rp 1.280) per Menit</li>
+                        <li><strong>Transkrip (Deepgram):</strong> ~$0.004 (Rp 64)</li>
+                        <li><strong>Otak AI (GPT-4o-mini):</strong> ~$0.001 (Rp 16)</li>
+                        <li><strong>Video Render (Shotstack):</strong> ~$0.075 (Rp 1.200)</li>
+                        <li class="font-bold text-red-700 pt-2 border-t border-red-200">Total Modal (Dibulatkan): Rp 1.300 / Menit</li>
                     </ul>
                 </div>
 
                 <!-- Profit Calculation -->
                 <div class="bg-emerald-50 p-6 rounded-xl border border-emerald-100">
-                    <h4 class="font-bold text-emerald-800 text-lg mb-3">Proyeksi Keuntungan (Per User)</h4>
-                    <p class="text-xs text-emerald-600 mb-3">Contoh: Menjual Paket <strong>$15 (Rp 240.000)</strong>/bulan</p>
+                    <h4 class="font-bold text-emerald-800 text-lg mb-3">Simulasi Top-Up & Keuntungan</h4>
+                    <p class="text-xs text-emerald-600 mb-3">Contoh: Pengguna membeli <strong>Paket Top-Up Creator</strong></p>
                     <ul class="text-sm text-slate-700 space-y-2 list-none">
-                        <li class="flex justify-between border-b border-emerald-200 pb-1"><span>Harga Jual:</span> <strong class="text-emerald-700">Rp 240.000</strong></li>
-                        <li class="flex justify-between border-b border-emerald-200 pb-1"><span>Jatah Diberikan:</span> <strong>100 Menit (100 Kredit)</strong></li>
-                        <li class="flex justify-between border-b border-emerald-200 pb-1"><span>Maksimal Modal (API):</span> <strong class="text-red-600">Rp 128.000</strong></li>
-                        <li class="flex justify-between pt-1"><span><strong>Net Profit Minimum:</strong></span> <strong class="text-emerald-700">Rp 112.000 (46%)</strong></li>
+                        <li class="flex justify-between border-b border-emerald-200 pb-1"><span>Harga Jual Top-Up:</span> <strong class="text-emerald-700">Rp 100.000</strong></li>
+                        <li class="flex justify-between border-b border-emerald-200 pb-1"><span>Kredit Didapat (User):</span> <strong>50 Kredit (50 Menit)</strong></li>
+                        <li class="flex justify-between border-b border-emerald-200 pb-1"><span>Maksimal Modal (50 x Rp 1.300):</span> <strong class="text-red-600">Rp 65.000</strong></li>
+                        <li class="flex justify-between pt-1"><span><strong>Laba Bersih (Net Profit):</strong></span> <strong class="text-emerald-700">Rp 35.000 (Margin 35%)</strong></li>
                     </ul>
                 </div>
             </div>
