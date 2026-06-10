@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VidFlow AI - Technical Blueprint & Architecture</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; background-color: #f1f5f9; color: #0f172a; }
+        @media print {
+            body { background-color: white; }
+            .no-print { display: none; }
+            .print-shadow-none { box-shadow: none !important; border: 1px solid #e2e8f0; }
+            .page-break { page-break-before: always; }
+        }
+    </style>
+</head>
+<body class="py-10">
+
+    <!-- Print Button -->
+    <div class="max-w-4xl mx-auto mb-6 text-right no-print">
+        <button onclick="window.print()" class="bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-2 px-6 rounded-lg shadow-md transition-all">
+            🖨️ Cetak sebagai PDF
+        </button>
+    </div>
+
+    <!-- Document Container -->
+    <div class="max-w-4xl mx-auto bg-white p-12 rounded-2xl shadow-xl print-shadow-none">
+        
+        <!-- Header -->
+        <header class="border-b-2 border-indigo-100 pb-8 mb-8 text-center">
+            <h1 class="text-4xl font-extrabold text-indigo-900 tracking-tight mb-3">VidFlow AI Studio</h1>
+            <h2 class="text-2xl font-semibold text-slate-600">Blueprint Arsitektur & Perencanaan Sistem</h2>
+            <p class="text-sm text-slate-400 mt-4">Dokumen Rahasia & Strategis | Disiapkan untuk: CEO VidFlow</p>
+        </header>
+
+        <!-- Executive Summary -->
+        <section class="mb-10">
+            <h3 class="text-xl font-bold text-slate-800 border-l-4 border-indigo-500 pl-3 mb-4">1. Ringkasan Eksekutif (Executive Summary)</h3>
+            <p class="text-slate-600 leading-relaxed mb-4">
+                Dokumen ini menguraikan peta jalan (roadmap) teknis untuk mentransformasi VidFlow dari platform <em>Auto-Uploader</em> menjadi <strong>Generative AI Content Engine</strong> yang setara (1:1) dengan OpusClip. 
+            </p>
+            <p class="text-slate-600 leading-relaxed">
+                Tujuan utama pengembangan ini adalah memberikan kemampuan kepada sistem VidFlow untuk menerima satu video durasi panjang (Podcast/Vlog), menganalisisnya menggunakan <em>Large Language Models</em> (LLM), dan secara otomatis memecahnya menjadi belasan klip vertikal berkualitas tinggi (siap viral) lengkap dengan pelacakan wajah dan <em>subtitle</em> dinamis.
+            </p>
+        </section>
+
+        <!-- The 4-Phase Architecture -->
+        <section class="mb-10 page-break">
+            <h3 class="text-xl font-bold text-slate-800 border-l-4 border-indigo-500 pl-3 mb-6">2. Arsitektur Teknis 4-Fase (The 4-Phase Pipeline)</h3>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <!-- Phase 1 -->
+                <div class="bg-slate-50 p-6 rounded-xl border border-slate-200">
+                    <div class="flex items-center mb-3">
+                        <div class="bg-indigo-100 text-indigo-700 font-bold w-8 h-8 rounded-full flex items-center justify-center mr-3">1</div>
+                        <h4 class="font-bold text-slate-800 text-lg">Injeksi & Transkripsi Audio</h4>
+                    </div>
+                    <ul class="text-sm text-slate-600 space-y-2 list-disc pl-5">
+                        <li>Pengguna mengunggah URL YouTube atau file MP4 mentah.</li>
+                        <li>Sistem menggunakan <strong>FFmpeg</strong> untuk mengekstrak layer audio (MP3).</li>
+                        <li>Sistem memanggil <strong>Deepgram API</strong> (Nova-2 Model) untuk melakukan <em>Speech-to-Text</em> dengan kecepatan tinggi.</li>
+                        <li><strong>Output:</strong> Teks transkrip lengkap beserta <em>Word-Level Timestamps</em> (akurasi milidetik untuk setiap kata).</li>
+                    </ul>
+                </div>
+
+                <!-- Phase 2 -->
+                <div class="bg-slate-50 p-6 rounded-xl border border-slate-200">
+                    <div class="flex items-center mb-3">
+                        <div class="bg-indigo-100 text-indigo-700 font-bold w-8 h-8 rounded-full flex items-center justify-center mr-3">2</div>
+                        <h4 class="font-bold text-slate-800 text-lg">Analisis Otak AI (Viral Hooks)</h4>
+                    </div>
+                    <ul class="text-sm text-slate-600 space-y-2 list-disc pl-5">
+                        <li>Transkrip dikirim ke <strong>OpenAI GPT-4o API</strong> atau <strong>Claude 3.5 Sonnet</strong>.</li>
+                        <li>LLM diinstruksikan untuk mencari momen paling emosional/menarik (durasi 30-60 detik).</li>
+                        <li>LLM menghasilkan metadata: Judul Klip, Deskripsi, <em>Virality Score (1-100)</em>, dan Titik Potong Waktu (Start/End).</li>
+                        <li><strong>Output:</strong> Data JSON berisi 5-10 rekomendasi klip terbaik.</li>
+                    </ul>
+                </div>
+
+                <!-- Phase 3 -->
+                <div class="bg-slate-50 p-6 rounded-xl border border-slate-200">
+                    <div class="flex items-center mb-3">
+                        <div class="bg-indigo-100 text-indigo-700 font-bold w-8 h-8 rounded-full flex items-center justify-center mr-3">3</div>
+                        <h4 class="font-bold text-slate-800 text-lg">Pelacakan Wajah & Pemotongan</h4>
+                    </div>
+                    <ul class="text-sm text-slate-600 space-y-2 list-disc pl-5">
+                        <li>Karena server VPS (t4g.medium) tidak sanggup merender video AI, tugas ini dilempar ke <strong>Shotstack API</strong> atau <strong>Cloudinary</strong>.</li>
+                        <li>AI melakukan konversi video rasio lanskap (16:9) menjadi format vertikal TikTok/Reels (9:16).</li>
+                        <li>Fitur <em>Auto Face-Tracking</em> memastikan wajah pembicara utama selalu berada tepat di tengah layar.</li>
+                    </ul>
+                </div>
+
+                <!-- Phase 4 -->
+                <div class="bg-slate-50 p-6 rounded-xl border border-slate-200">
+                    <div class="flex items-center mb-3">
+                        <div class="bg-indigo-100 text-indigo-700 font-bold w-8 h-8 rounded-full flex items-center justify-center mr-3">4</div>
+                        <h4 class="font-bold text-slate-800 text-lg">Subtitel Dinamis & Distribusi</h4>
+                    </div>
+                    <ul class="text-sm text-slate-600 space-y-2 list-disc pl-5">
+                        <li>Memasukkan subtitel tebal gaya "Hormozi" berdasarkan data <em>Word-Level Timestamps</em> dari Tahap 1.</li>
+                        <li>Injeksi Emoji otomatis berdasarkan konteks kalimat (via LLM).</li>
+                        <li><strong>Output Akhir:</strong> Klip video vertikal final yang langsung disambungkan ke sistem <em>Auto-Uploader</em> VidFlow yang sudah ada.</li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+
+        <!-- Business Model Transformation -->
+        <section class="mb-10 page-break">
+            <h3 class="text-xl font-bold text-slate-800 border-l-4 border-indigo-500 pl-3 mb-4">3. Transformasi Model Bisnis (Monetisasi)</h3>
+            <p class="text-slate-600 leading-relaxed mb-4">
+                Operasional AI memiliki biaya per panggilan API (Transkripsi, LLM, Rendering). Oleh karena itu, skema berlangganan VidFlow harus diubah dari model "Paket Biasa" menjadi <strong>Sistem Kredit (Credit-Based System)</strong> untuk mencegah kerugian operasional.
+            </p>
+            
+            <div class="bg-slate-800 text-white p-6 rounded-xl">
+                <h4 class="font-bold text-lg mb-3 text-indigo-300">Rekomendasi Skema Kredit:</h4>
+                <ul class="space-y-3 text-sm">
+                    <li class="flex items-start">
+                        <span class="mr-2">💡</span>
+                        <span><strong>1 Kredit = 1 Menit Video Asli.</strong> Jika pengguna mengunggah video 30 menit, saldo terpotong 30 kredit di muka, terlepas dari berapa banyak klip yang dihasilkan.</span>
+                    </li>
+                    <li class="flex items-start">
+                        <span class="mr-2">💡</span>
+                        <span><strong>Paket Basic ($15/bln):</strong> Mendapatkan 150 Kredit (150 menit pemrosesan). Cukup untuk 2-3 Podcast per bulan.</span>
+                    </li>
+                    <li class="flex items-start">
+                        <span class="mr-2">💡</span>
+                        <span><strong>Paket Pro ($29/bln):</strong> Mendapatkan 300 Kredit + Fitur Auto-Schedule ke semua Sosmed.</span>
+                    </li>
+                </ul>
+            </div>
+        </section>
+
+        <!-- Development Roadmap -->
+        <section class="mb-6">
+            <h3 class="text-xl font-bold text-slate-800 border-l-4 border-indigo-500 pl-3 mb-4">4. Peta Jalan Pengembangan (Roadmap)</h3>
+            
+            <div class="relative border-l border-slate-200 ml-3">
+                <div class="mb-6 ml-6">
+                    <span class="absolute flex items-center justify-center w-6 h-6 bg-indigo-100 rounded-full -left-3 ring-8 ring-white">
+                        <div class="w-2 h-2 bg-indigo-600 rounded-full"></div>
+                    </span>
+                    <h3 class="font-bold text-slate-800">Bulan 1: Riset API & Prototipe Backend</h3>
+                    <p class="text-sm text-slate-500 mt-1">Mengintegrasikan Deepgram API dan OpenAI. Membuat skrip Python/PHP untuk mengekstrak transkrip dan mendapatkan skor viral.</p>
+                </div>
+                
+                <div class="mb-6 ml-6">
+                    <span class="absolute flex items-center justify-center w-6 h-6 bg-slate-100 rounded-full -left-3 ring-8 ring-white">
+                        <div class="w-2 h-2 bg-slate-400 rounded-full"></div>
+                    </span>
+                    <h3 class="font-bold text-slate-800">Bulan 2: Integrasi Video Rendering</h3>
+                    <p class="text-sm text-slate-500 mt-1">Menghubungkan Shotstack API untuk melakukan <em>face-tracking</em> dan <em>auto-crop</em> 9:16. Mendesain template teks subtitle animasi.</p>
+                </div>
+                
+                <div class="ml-6">
+                    <span class="absolute flex items-center justify-center w-6 h-6 bg-slate-100 rounded-full -left-3 ring-8 ring-white">
+                        <div class="w-2 h-2 bg-slate-400 rounded-full"></div>
+                    </span>
+                    <h3 class="font-bold text-slate-800">Bulan 3: UX/UI & Sistem Kredit</h3>
+                    <p class="text-sm text-slate-500 mt-1">Membangun antarmuka (UI) di Laravel/React untuk memutar hasil klip. Mengintegrasikan sistem pembayaran Stripe dan logika pemotongan saldo (Credits) pada database pengguna.</p>
+                </div>
+            </div>
+        </section>
+
+        <footer class="mt-12 pt-6 border-t border-slate-200 text-center">
+            <p class="text-slate-400 text-sm">Disusun secara eksklusif oleh Sistem AI VidFlow &copy; 2026</p>
+        </footer>
+
+    </div>
+
+</body>
+</html>
