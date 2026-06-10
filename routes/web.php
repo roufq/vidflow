@@ -112,9 +112,15 @@ Route::middleware(['auth', 'verified'])->group(function () {
     })->name('dashboard');
 
     Route::get('/analytics', function () {
-        $totalUploads = \App\Models\UploadJob::where('user_id', auth()->id())->count();
-        $activeConnections = \App\Models\PlatformConnection::where('user_id', auth()->id())->count();
+        // Calculate uploads for the current month only for the quota
+        $currentMonthUploads = \App\Models\UploadJob::where('user_id', auth()->id())
+            ->whereMonth('created_at', now()->month)
+            ->whereYear('created_at', now()->year)
+            ->count();
+            
+        $monthlyLimit = 50; // Hardcoded default limit, can be adjusted based on user->plan later
         
+        $activeConnections = \App\Models\PlatformConnection::where('user_id', auth()->id())->count();
         $connectionsList = \App\Models\PlatformConnection::where('user_id', auth()->id())->get();
         
         $uploads = \App\Models\PlatformUpload::with(['uploadJob:id,title', 'connection'])
@@ -129,7 +135,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
         $totalLikes = $uploads->sum('likes');
 
         return Inertia::render('Analytics', [
-            'totalUploads' => $totalUploads,
+            'currentMonthUploads' => $currentMonthUploads,
+            'monthlyLimit' => $monthlyLimit,
             'activeConnections' => $activeConnections,
             'totalViews' => $totalViews,
             'totalLikes' => $totalLikes,
