@@ -233,31 +233,34 @@ export default function Welcome({ auth }) {
                             />
                             <PricingCard 
                                 name="Standard"
-                                price="Rp 59rb"
+                                originalPrice="Rp 59rb"
+                                price="Rp 29rb"
                                 period="/ bln"
                                 desc="Kreator Pemula"
-                                features={["1 Akun per Platform", "20 Video / bulan", "Maksimal 200 MB / video", "Penjadwalan (Maks 7 Hari)", "Analytics Lengkap"]}
+                                features={["1 Akun per Platform", "25 Video / bulan", "Maksimal 200 MB / video", "Penjadwalan (Maks 30 Hari)", "Analytics Lengkap"]}
                                 buttonText="Pilih Standard"
                                 isPopular={false}
                             />
                             <PricingCard 
                                 name="Pro"
-                                price="Rp 149rb"
+                                originalPrice="Rp 179rb"
+                                price="Rp 99rb"
                                 period="/ bln"
                                 desc="UMKM & Kreator"
-                                features={["3 Akun per Platform", "60 Video / bulan", "Maksimal 500 MB / video", "Penjadwalan (Maks 30 Hari)", "Prioritas Antrean"]}
+                                features={["3 Akun per Platform", "80 Video / bulan", "Maksimal 500 MB / video", "Penjadwalan (Maks 90 Hari)", "Prioritas Antrean"]}
                                 buttonText="Pilih Pro"
                                 isPopular={true}
                             />
                             <PricingCard 
-                                name="Business"
-                                price="Rp 499rb"
+                                name="Bisnis"
+                                originalPrice="Rp 499rb"
+                                price="Rp 249rb"
                                 period="/ bln"
-                                desc="Agensi & Perusahaan"
-                                features={["Akun Unlimited", "Video Unlimited", "Maksimal 1 GB / video", "Penjadwalan (Maks 1 Tahun)", "Prioritas VIP & Support"]}
-                                buttonText="Pilih Business"
-                            />
-                        </div>
+                                desc="Agensi & Brand"
+                                features={["Akun Unlimited", "Upload Unlimited", "Maksimal 1 GB / video", "Penjadwalan (365 Hari)", "Dedicated Support"]}
+                                buttonText="Pilih Bisnis"
+                                isPopular={false}
+                            />                    </div>
                     </section>
 
                     {/* FAQ Section */}
@@ -334,7 +337,7 @@ function FeatureCard({ icon, title, desc }) {
     );
 }
 
-function PricingCard({ name, price, period, desc, features, noFeatures = [], buttonText, isPopular }) {
+function PricingCard({ name, price, originalPrice, period, desc, features, noFeatures = [], buttonText, isPopular }) {
     return (
         <div className={`relative flex flex-col p-8 rounded-3xl ${isPopular ? 'bg-gradient-to-b from-indigo-900/40 to-black border-indigo-500 shadow-[0_0_30px_rgba(79,70,229,0.2)] border-2' : 'bg-[#111] border border-white/10 hover:border-white/20 transition-colors'}`}>
             {isPopular && (
@@ -347,6 +350,9 @@ function PricingCard({ name, price, period, desc, features, noFeatures = [], but
             <p className="text-sm text-slate-400 mb-6">{desc}</p>
             
             <div className="mb-6">
+                {originalPrice && (
+                    <div className="text-sm font-semibold text-slate-500 line-through mb-1">{originalPrice}</div>
+                )}
                 <span className="text-4xl font-extrabold text-white">{price}</span>
                 {period && <span className="text-slate-500 ml-1">{period}</span>}
             </div>
