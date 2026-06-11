@@ -10,14 +10,31 @@ class UploadController extends Controller
 {
     public function store(Request $request)
     {
+        $user = auth()->user();
+        
+        // 1. Cek Kuota Upload Bulanan
+        if ($user->upload_limit !== -1) {
+            $currentMonthUploads = \App\Models\UploadJob::where('user_id', $user->id)
+                ->whereMonth('created_at', now()->month)
+                ->whereYear('created_at', now()->year)
+                ->count();
+                
+            if ($currentMonthUploads >= $user->upload_limit) {
+                return redirect()->back()->with('error', 'Limit upload bulanan Anda telah tercapai (' . $user->upload_limit . ' video). Silakan upgrade paket berlangganan Anda ke Pro atau Bisnis.');
+            }
+        }
+
+        $maxDays = $user->max_scheduling_days;
+        $maxSizeKb = $user->max_file_size_mb * 1024;
+
         $validated = $request->validate([
             'title' => 'required|string|max:100', // YouTube STRICTLY requires max 100 chars
             'description' => 'nullable|string|max:2200', // Instagram & TikTok captions max around 2200 chars
             'tags' => 'nullable|string|max:500', // YouTube tags total length max 500 chars
-            'video' => 'required|file|mimetypes:video/mp4,video/quicktime,video/webm|max:1048576', // max 1GB (1048576 KB) to be safe for TikTok/IG API
+            'video' => 'required|file|mimetypes:video/mp4,video/quicktime,video/webm|max:' . $maxSizeKb,
             'selected_connections' => 'required|array|min:1',
             'selected_connections.*' => 'required|uuid|exists:platform_connections,id',
-            'scheduled_at' => 'nullable|date|after:now',
+            'scheduled_at' => 'nullable|date|after:now|before_or_equal:+' . $maxDays . ' days',
             'thumbnail' => 'nullable|image|mimes:jpeg,png,jpg|max:5120', // max 5MB
         ]);
 

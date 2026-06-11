@@ -118,7 +118,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
             ->whereYear('created_at', now()->year)
             ->count();
             
-        $monthlyLimit = 50; // Hardcoded default limit, can be adjusted based on user->plan later
+        $monthlyLimit = auth()->user()->upload_limit; // Now pulls from User model attribute
         
         $activeConnections = \App\Models\PlatformConnection::where('user_id', auth()->id())->count();
         $connectionsList = \App\Models\PlatformConnection::where('user_id', auth()->id())->get();

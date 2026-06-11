@@ -1,9 +1,10 @@
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
-import { Head, useForm } from '@inertiajs/react';
+import { Head, useForm, usePage } from '@inertiajs/react';
 import { useState, useRef } from 'react';
 import InputError from '@/Components/InputError';
 
 export default function Dashboard({ flash, connections = {} }) {
+    const user = usePage().props.auth.user;
     const fileInputRef = useRef(null);
     const [isScheduled, setIsScheduled] = useState(false);
     
@@ -105,7 +106,7 @@ export default function Dashboard({ flash, connections = {} }) {
                                 <div className="inline-flex items-center justify-center px-6 py-2.5 border border-white/10 rounded-full text-sm font-medium text-white bg-white/5 hover:bg-white/10 transition-colors">
                                     Pilih File Video
                                 </div>
-                                <p className="text-xs text-slate-500 mt-6 font-medium tracking-wide uppercase">MP4, MOV, WEBM • Maks 1GB</p>
+                                <p className="text-xs text-slate-500 mt-6 font-medium tracking-wide uppercase">MP4, MOV, WEBM • Maks {user.max_file_size_mb >= 1024 ? (user.max_file_size_mb / 1024) + 'GB' : user.max_file_size_mb + 'MB'}</p>
                             </div>
                         )}
                         <InputError message={errors.video} className="mt-4" />
