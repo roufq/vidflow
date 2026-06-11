@@ -59,11 +59,11 @@ class User extends Authenticatable implements MustVerifyEmail
     public function getMaxFileSizeMbAttribute(): int
     {
         return match($this->plan) {
-            'free' => 100, // 100 MB
-            'standard' => 250, // 250 MB
+            'free' => 50, // 50 MB
+            'standard' => 200, // 200 MB
             'pro' => 500, // 500 MB
             'business' => 1024, // 1 GB
-            default => 100,
+            default => 50,
         };
     }
 }
