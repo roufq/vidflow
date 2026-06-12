@@ -11,6 +11,9 @@ return new class extends Migration
      */
     public function up(): void
     {
+        if (\Illuminate\Support\Facades\DB::getDriverName() === 'sqlite') {
+            return;
+        }
         \Illuminate\Support\Facades\DB::statement("ALTER TABLE users MODIFY COLUMN plan ENUM('free', 'standard', 'pro', 'business') DEFAULT 'free'");
     }
 
@@ -19,6 +22,9 @@ return new class extends Migration
      */
     public function down(): void
     {
+        if (\Illuminate\Support\Facades\DB::getDriverName() === 'sqlite') {
+            return;
+        }
         \Illuminate\Support\Facades\DB::statement("ALTER TABLE users MODIFY COLUMN plan ENUM('free', 'pro', 'business') DEFAULT 'free'");
     }
 };

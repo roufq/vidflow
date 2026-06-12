@@ -19,10 +19,26 @@ class ProcessVideoUpload implements ShouldQueue
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
     public $timeout = 3600; // 1 hour timeout
-    public $tries = 10; // Ditingkatkan agar Instagram punya waktu untuk merender video
+    public $tries = 50; // Ditingkatkan agar tidak prematur gagal saat menunggu antrean WithoutOverlapping
 
     protected $platformUpload;
     protected $baseUrl;
+
+    /**
+     * Get the middleware the job should pass through.
+     *
+     * @return array<int, object>
+     */
+    public function middleware(): array
+    {
+        $jobId = $this->platformUpload->job_id;
+
+        return [
+            (new \Illuminate\Queue\Middleware\WithoutOverlapping($jobId))
+                ->releaseAfter(60) // Coba lagi setelah 60 detik jika ter-lock oleh platform lain
+                ->expireAfter(3600) // Masa kadaluarsa lock maksimal 1 jam
+        ];
+    }
 
     public function __construct(PlatformUpload $platformUpload, $baseUrl = 'http://localhost:8000')
     {
@@ -43,44 +59,45 @@ class ProcessVideoUpload implements ShouldQueue
 
         try {
             $token = Crypt::decryptString($connection->access_token);
-            $disk = env('FILESYSTEM_DISK', 'public');
+            $disk = 'local'; // Membaca file transit dari penyimpanan lokal VPS SSD secara bawaan
             
-            // 1. Download file temporarily from Google Drive to local server for API streaming
-            $tempPath = storage_path('app/temp_' . uniqid() . '_' . basename($job->file_path));
-            
-            // Menggunakan stream agar RAM tidak jebol saat mendownload video 4GB
-            $readStream = Storage::disk($disk)->readStream($job->file_path);
-            
-            if ($readStream) {
-                $writeStream = fopen($tempPath, 'w');
-                stream_copy_to_stream($readStream, $writeStream);
-                fclose($writeStream);
-                fclose($readStream);
-            } else {
-                // Fallback jika Google Drive gagal memberikan Stream (sering terjadi jika API token limit/expired)
-                $content = Storage::disk($disk)->get($job->file_path);
-                if ($content === null || $content === false) {
-                    throw new \Exception("Gagal mendownload video dari Google Drive. File mungkin telah terhapus atau koneksi Google Drive bermasalah. Path: " . $job->file_path);
+            // Verifikasi bahwa file video ada di storage lokal VPS
+            if (!Storage::disk($disk)->exists($job->file_path)) {
+                // Fallback ke Cloud Storage (misal Google Drive) jika file lokal sudah di-backup & dihapus dari VPS
+                $cloudDiskName = env('CLOUD_FILESYSTEM_DISK', 'google');
+                if (Storage::disk($cloudDiskName)->exists($job->file_path)) {
+                    $disk = $cloudDiskName;
+                } else {
+                    throw new \Exception("File video tidak ditemukan secara lokal maupun di Cloud Storage. Path: " . $job->file_path);
                 }
-                file_put_contents($tempPath, $content);
             }
+            
             $this->platformUpload->update(['progress_percent' => 10]);
 
             // =====================================================================
             // ACTUAL API LOGIC FOR YOUTUBE
             // =====================================================================
             if ($this->platformUpload->platform === 'youtube') {
+                $client = new \Google\Client();
+
                 $credential = \App\Models\UserPlatformCredential::where('user_id', $job->user_id)
                     ->where('platform', 'youtube')
                     ->first();
 
-                if (!$credential) {
-                    throw new \Exception("YouTube Client ID dan Secret belum dikonfigurasi di menu pengaturan (Connections).");
-                }
+                if ($credential) {
+                    $client->setClientId($credential->app_id);
+                    $client->setClientSecret($credential->app_secret);
+                } else {
+                    $globalClientId = config('services.youtube.client_id');
+                    $globalClientSecret = config('services.youtube.client_secret');
 
-                $client = new \Google\Client();
-                $client->setClientId($credential->app_id);
-                $client->setClientSecret($credential->app_secret);
+                    if ($globalClientId && $globalClientSecret) {
+                        $client->setClientId($globalClientId);
+                        $client->setClientSecret($globalClientSecret);
+                    } else {
+                        throw new \Exception("YouTube Client ID dan Secret belum dikonfigurasi.");
+                    }
+                }
                 
                 // Construct the token array for Google Client
                 $tokenArray = [
@@ -132,20 +149,24 @@ class ProcessVideoUpload implements ShouldQueue
                     true,
                     $chunkSizeBytes
                 );
-                $media->setFileSize(filesize($tempPath));
+                $media->setFileSize($job->file_size_bytes);
 
                 $status = false;
-                $handle = fopen($tempPath, "rb");
-                while (!$status && !feof($handle)) {
-                    $chunk = fread($handle, $chunkSizeBytes);
+                $readStream = Storage::disk($disk)->readStream($job->file_path);
+                if (!$readStream) {
+                    throw new \Exception("Gagal membuka stream file video untuk YouTube.");
+                }
+
+                while (!$status && !feof($readStream)) {
+                    $chunk = fread($readStream, $chunkSizeBytes);
                     $status = $media->nextChunk($chunk);
                     
                     // Update progress ke database untuk dilihat di Dashboard
                     $progress = $media->getProgress();
-                    $percent = min(99, 10 + intval(($progress / filesize($tempPath)) * 90));
+                    $percent = min(99, 10 + intval(($progress / $job->file_size_bytes) * 90));
                     $this->platformUpload->update(['progress_percent' => $percent]);
                 }
-                fclose($handle);
+                fclose($readStream);
                 $client->setDefer(false);
 
                 $finalVideoId = $status['id'];
@@ -236,12 +257,21 @@ class ProcessVideoUpload implements ShouldQueue
                 $pageToken = $page['access_token'];
                 $pageId = $page['id'];
 
+                $readStream = Storage::disk($disk)->readStream($job->file_path);
+                if (!$readStream) {
+                    throw new \Exception("Gagal membuka stream file video untuk Facebook.");
+                }
+
                 $response = \Illuminate\Support\Facades\Http::timeout(3600)->withToken($pageToken)
-                    ->attach('source', fopen($tempPath, 'r'), basename($tempPath))
+                    ->attach('source', $readStream, basename($job->file_path))
                     ->post('https://graph.facebook.com/v19.0/' . $pageId . '/videos', [
                         'description' => $job->description ?? $job->title,
                         'title' => $job->title,
                     ]);
+
+                if (is_resource($readStream)) {
+                    fclose($readStream);
+                }
 
                 if ($response->failed()) {
                     throw new \Exception('Facebook API Error: ' . $response->body());
@@ -280,18 +310,13 @@ class ProcessVideoUpload implements ShouldQueue
 
                 $this->platformUpload->update(['progress_percent' => 40]);
 
-                // 3. Instagram API mewajibkan URL video publik, bukan upload file biner.
-                $publicTempDir = public_path('temp_ig');
-                if (!is_dir($publicTempDir)) {
-                    mkdir($publicTempDir, 0755, true);
-                }
-                $publicFilename = basename($tempPath);
-                $publicFilePath = $publicTempDir . '/' . $publicFilename;
-                if (!file_exists($publicFilePath)) {
-                    copy($tempPath, $publicFilePath);
-                }
-                
-                $videoUrl = $this->baseUrl . '/temp_ig/' . $publicFilename;
+                // 3. Instagram API mewajibkan URL video publik. Kita buat Signed URL sementara 
+                // agar Meta bisa melakukan stream langsung dari Google Drive lewat server kita tanpa local caching.
+                $videoUrl = \Illuminate\Support\Facades\URL::temporarySignedRoute(
+                    'video.stream',
+                    now()->addHours(4), // Valid selama 4 jam
+                    ['job' => $job->id]
+                );
 
                 // 4. Buat Container Media (Hanya jika belum dibuat sebelumnya)
                 $creationId = $this->platformUpload->platform_video_id;
@@ -305,7 +330,6 @@ class ProcessVideoUpload implements ShouldQueue
                         ]);
 
                     if ($containerResponse->failed()) {
-                        @unlink($publicFilePath);
                         throw new \Exception('Instagram API Container Error: ' . $containerResponse->body());
                     }
 
@@ -324,7 +348,6 @@ class ProcessVideoUpload implements ShouldQueue
 
                 if ($statusCode !== 'FINISHED') {
                     if ($statusCode === 'ERROR') {
-                        @unlink($publicFilePath);
                         throw new \Exception('Instagram Error: Meta gagal memproses video ini. Status: ERROR.');
                     }
                     
@@ -340,8 +363,6 @@ class ProcessVideoUpload implements ShouldQueue
                         'creation_id' => $creationId,
                     ]);
 
-                @unlink($publicFilePath); // Hapus file publik setelah selesai
-
                 if ($publishResponse->failed()) {
                     throw new \Exception('Instagram API Publish Error: ' . $publishResponse->body());
                 }
@@ -354,7 +375,6 @@ class ProcessVideoUpload implements ShouldQueue
                     'platform_video_id' => $finalVideoId, // Timpa creation_id dengan ID final
                     'platform_url' => $finalUrl
                 ]);
-
 
             } elseif ($this->platformUpload->platform === 'tiktok') {
                 // =====================================================================
@@ -374,8 +394,8 @@ class ProcessVideoUpload implements ShouldQueue
                         ],
                         'source_info' => [
                             'source' => 'FILE_UPLOAD',
-                            'video_size' => filesize($tempPath),
-                            'chunk_size' => filesize($tempPath),
+                            'video_size' => $job->file_size_bytes,
+                            'chunk_size' => $job->file_size_bytes,
                             'total_chunk_count' => 1
                         ]
                     ]);
@@ -390,15 +410,21 @@ class ProcessVideoUpload implements ShouldQueue
                 $publishId = $initResponse->json('data.publish_id');
 
                 // 2. Upload Binary File Video ke URL yang diberikan TikTok
-                $videoData = file_get_contents($tempPath);
-                $videoSize = strlen($videoData);
+                $readStream = Storage::disk($disk)->readStream($job->file_path);
+                if (!$readStream) {
+                    throw new \Exception("Gagal membuka stream file video untuk TikTok.");
+                }
                 
                 $uploadResponse = \Illuminate\Support\Facades\Http::timeout(3600)
                     ->withHeaders([
-                        'Content-Range' => 'bytes 0-' . ($videoSize - 1) . '/' . $videoSize,
+                        'Content-Range' => 'bytes 0-' . ($job->file_size_bytes - 1) . '/' . $job->file_size_bytes,
                     ])
-                    ->withBody($videoData, 'video/mp4')
+                    ->withBody($readStream, 'video/mp4')
                     ->put($uploadUrl);
+
+                if (is_resource($readStream)) {
+                    fclose($readStream);
+                }
 
                 if ($uploadResponse->failed()) {
                     throw new \Exception('TikTok Video Upload Error (Status ' . $uploadResponse->status() . '): ' . $uploadResponse->body());
@@ -408,11 +434,6 @@ class ProcessVideoUpload implements ShouldQueue
                 
                 $finalVideoId = $publishId;
                 $finalUrl = 'https://tiktok.com/@me/video/' . $finalVideoId;
-            }
-
-            // Cleanup local temp file
-            if (file_exists($tempPath)) {
-                unlink($tempPath);
             }
 
             // Mark job as absolutely DONE
@@ -437,8 +458,6 @@ class ProcessVideoUpload implements ShouldQueue
             }
 
         } catch (\Throwable $e) {
-            if (isset($tempPath) && file_exists($tempPath)) @unlink($tempPath);
-            
             $this->platformUpload->update([
                 'status' => 'failed',
                 'error_message' => 'SysError: ' . $e->getMessage() . ' at ' . $e->getFile() . ':' . $e->getLine(),
@@ -459,6 +478,100 @@ class ProcessVideoUpload implements ShouldQueue
             }
             
             throw $e;
+        } finally {
+            $this->cleanUpCache();
+        }
+    }
+
+    /**
+     * Bersihkan cache file lokal dan lakukan backup ke Google Drive jika semua platform selesai.
+     */
+    protected function cleanUpCache(): void
+    {
+        $job = $this->platformUpload->uploadJob;
+        if (!$job) {
+            return;
+        }
+
+        $localDisk = \Illuminate\Support\Facades\Storage::disk('local');
+        $cloudDiskName = env('CLOUD_FILESYSTEM_DISK', 'google');
+
+        // 1. Bersihkan file sampah yatim piatu yang berumur lebih dari 24 jam
+        try {
+            $files = $localDisk->files('transit_videos');
+            foreach ($files as $file) {
+                if ($localDisk->lastModified($file) < now()->subHours(24)->getTimestamp()) {
+                    $localDisk->delete($file);
+                    Log::info("Cleaned up orphaned transit video: {$file}");
+                }
+            }
+
+            $thumbnails = $localDisk->files('transit_thumbnails');
+            foreach ($thumbnails as $thumb) {
+                if ($localDisk->lastModified($thumb) < now()->subHours(24)->getTimestamp()) {
+                    $localDisk->delete($thumb);
+                    Log::info("Cleaned up orphaned transit thumbnail: {$thumb}");
+                }
+            }
+        } catch (\Exception $e) {
+            Log::warning("Gagal membersihkan cache lama: " . $e->getMessage());
+        }
+
+        // 2. Periksa apakah semua platform untuk job ini sudah selesai diproses (done atau failed)
+        $remaining = \App\Models\PlatformUpload::where('job_id', $job->id)
+            ->whereIn('status', ['pending', 'uploading'])
+            ->count();
+
+        if ($remaining === 0) {
+            try {
+                // Copy file video ke Google Drive jika masih ada di local VPS
+                if ($localDisk->exists($job->file_path)) {
+                    Log::info("Uploading video from local VPS to Cloud Storage ({$cloudDiskName}): {$job->id}");
+
+                    $localStream = $localDisk->readStream($job->file_path);
+                    if ($localStream) {
+                        $cloudPath = 'transit_videos/' . basename($job->file_path);
+                        $uploaded = \Illuminate\Support\Facades\Storage::disk($cloudDiskName)->writeStream($cloudPath, $localStream);
+                        if (is_resource($localStream)) {
+                            fclose($localStream);
+                        }
+
+                        if ($uploaded) {
+                            Log::info("Successfully uploaded video to Cloud Storage: {$cloudPath}");
+                            
+                            // Update path file ke cloud
+                            $job->update(['file_path' => $cloudPath]);
+                            
+                            // Hapus file video lokal dari VPS
+                            $localDisk->delete($job->file_path);
+                        } else {
+                            Log::error("Gagal menyalin video ke Cloud Storage.");
+                        }
+                    }
+                }
+
+                // Copy thumbnail ke Google Drive jika ada dan masih di local VPS
+                if ($job->thumbnail_path && $localDisk->exists($job->thumbnail_path)) {
+                    $localThumbStream = $localDisk->readStream($job->thumbnail_path);
+                    if ($localThumbStream) {
+                        $cloudThumbPath = 'transit_thumbnails/' . basename($job->thumbnail_path);
+                        $uploadedThumb = \Illuminate\Support\Facades\Storage::disk($cloudDiskName)->writeStream($cloudThumbPath, $localThumbStream);
+                        if (is_resource($localThumbStream)) {
+                            fclose($localThumbStream);
+                        }
+
+                        if ($uploadedThumb) {
+                            // Update path thumbnail ke cloud
+                            $job->update(['thumbnail_path' => $cloudThumbPath]);
+                            
+                            // Hapus file thumbnail lokal dari VPS
+                            $localDisk->delete($job->thumbnail_path);
+                        }
+                    }
+                }
+            } catch (\Exception $e) {
+                Log::error("Gagal melakukan backup video/thumbnail ke Cloud Storage: " . $e->getMessage());
+            }
         }
     }
 

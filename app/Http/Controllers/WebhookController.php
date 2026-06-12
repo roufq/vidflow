@@ -30,6 +30,39 @@ class WebhookController extends Controller
             // Handle Meta POST Webhook
             if ($request->isMethod('post')) {
                 $payload = $request->all();
+
+                // Get video ID to find the correct app secret for signature validation
+                $videoId = null;
+                if (isset($payload['entry'])) {
+                    foreach ($payload['entry'] as $entry) {
+                        if (isset($entry['changes'])) {
+                            foreach ($entry['changes'] as $change) {
+                                if ($change['field'] === 'videos' && isset($change['value']['video_id'])) {
+                                    $videoId = $change['value']['video_id'];
+                                    break 2;
+                                }
+                            }
+                        }
+                    }
+                }
+
+                if ($videoId) {
+                    $upload = \App\Models\PlatformUpload::where('platform_video_id', $videoId)->first();
+                    if ($upload) {
+                        $credential = \App\Models\UserPlatformCredential::where('user_id', $upload->uploadJob->user_id)
+                            ->where('platform', 'facebook')
+                            ->first();
+
+                        $appSecret = $credential ? $credential->app_secret : config('services.facebook.client_secret');
+
+                        if ($appSecret) {
+                            if (!$this->verifyMetaSignature($request, $appSecret)) {
+                                Log::warning("Meta Webhook: Invalid signature for video {$videoId}");
+                                return response('Invalid Signature', 403);
+                            }
+                        }
+                    }
+                }
                 
                 // Parse video status changes
                 if (isset($payload['entry'])) {
@@ -78,5 +111,27 @@ class WebhookController extends Controller
         }
 
         return response('Platform not supported', 404);
+    }
+
+    /**
+     * Verify the Meta Webhook signature.
+     */
+    private function verifyMetaSignature(Request $request, string $appSecret): bool
+    {
+        $signature = $request->header('X-Hub-Signature-256');
+        if (!$signature) {
+            return false;
+        }
+
+        $parts = explode('=', $signature);
+        if (count($parts) !== 2 || $parts[0] !== 'sha256') {
+            return false;
+        }
+
+        $expectedHeader = $parts[1];
+        $payload = $request->getContent();
+        $actualHeader = hash_hmac('sha256', $payload, $appSecret);
+
+        return hash_equals($expectedHeader, $actualHeader);
     }
 }

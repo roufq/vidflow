@@ -17,9 +17,17 @@ class PlatformConnectionController extends Controller
         $connections = PlatformConnection::where('user_id', auth()->id())->get()->groupBy('platform');
         $credentials = UserPlatformCredential::where('user_id', auth()->id())->get()->keyBy('platform');
         
+        $hasGlobalCredentials = [
+            'youtube' => false,
+            'facebook' => false,
+            'instagram' => false,
+            'tiktok' => !empty(config('services.tiktok.client_id')) && !empty(config('services.tiktok.client_secret')),
+        ];
+
         return inertia('Connections', [
             'connections' => $connections,
-            'credentials' => $credentials
+            'credentials' => $credentials,
+            'hasGlobalCredentials' => $hasGlobalCredentials,
         ]);
     }
 
@@ -61,9 +69,8 @@ class PlatformConnectionController extends Controller
             Config::set("services.{$driverName}.client_secret", $credential->app_secret);
             Config::set("services.{$driverName}.redirect", route('platform.callback', ['platform' => $platform]));
         } else {
-            abort(403, 'Anda harus mengatur App ID / Client ID dan Secret untuk ' . ucfirst($platform) . ' terlebih dahulu sebelum menghubungkan akun.');
+            abort(403, 'Demi alasan privasi dan perizinan API, Anda DIHARUSKAN mengatur App ID / Client ID dan Secret untuk ' . ucfirst($platform) . ' Anda sendiri di menu pengaturan akun sebelum menghubungkan.');
         }
-        
         return $driverName;
     }
 

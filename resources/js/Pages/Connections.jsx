@@ -2,7 +2,7 @@ import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import { Head, Link, usePage, router, useForm } from '@inertiajs/react';
 import { useState } from 'react';
 
-export default function Connections({ connections, credentials = {}, flash }) {
+export default function Connections({ connections, credentials = {}, hasGlobalCredentials = {}, flash }) {
     const user = usePage().props.auth.user;
     const platforms = [
         { id: 'youtube', name: 'YouTube', color: 'bg-[#FF0000]', hover: 'hover:bg-[#cc0000]' },
@@ -36,6 +36,7 @@ export default function Connections({ connections, credentials = {}, flash }) {
                         platform={platform} 
                         connectedAccounts={connections[platform.id] || []} 
                         credential={credentials[platform.id === 'instagram' ? 'facebook' : platform.id]}
+                        hasGlobal={hasGlobalCredentials[platform.id]}
                         user={user} 
                     />
                 ))}
@@ -48,7 +49,7 @@ export default function Connections({ connections, credentials = {}, flash }) {
     );
 }
 
-function PlatformCard({ platform, connectedAccounts, credential, user }) {
+function PlatformCard({ platform, connectedAccounts, credential, hasGlobal, user }) {
     const { data, setData, post, processing, errors } = useForm({
         app_id: credential?.app_id || '',
         app_secret: credential?.app_secret || ''
@@ -72,7 +73,14 @@ function PlatformCard({ platform, connectedAccounts, credential, user }) {
                     <span className="font-bold text-2xl">{platform.name.charAt(0)}</span>
                 </div>
                 <div className="flex-1">
-                    <h3 className="text-xl font-bold text-white tracking-tight mb-1">{platform.name}</h3>
+                    <div className="flex items-center gap-2 mb-1">
+                        <h3 className="text-xl font-bold text-white tracking-tight">{platform.name}</h3>
+                        {hasGlobal && (
+                            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20" title="Kredensial aplikasi global siap digunakan">
+                                Sistem Ready
+                            </span>
+                        )}
+                    </div>
                     {connectedAccounts.length === 0 ? (
                         <p className="text-sm text-slate-400 font-medium">Belum ada akun yang terhubung</p>
                     ) : (
@@ -102,10 +110,22 @@ function PlatformCard({ platform, connectedAccounts, credential, user }) {
 
             {showSettings && platform.id !== 'tiktok' && (
                 <form onSubmit={submit} className="mt-4 pt-4 border-t border-white/5 space-y-4">
-                    <div className="bg-indigo-500/10 border border-indigo-500/20 text-indigo-300 p-3 rounded-xl text-xs mb-3">
-                        Untuk keamanan dan melewati limitasi kuota, masukkan Client ID & Secret dari Aplikasi Developer {platform.name} Anda sendiri.
-                        {platform.id === 'instagram' && " (Gunakan kredensial yang sama dengan Meta/Facebook)"}
-                    </div>
+                    {hasGlobal ? (
+                        <div className="bg-emerald-500/10 border border-emerald-500/20 text-emerald-300 p-3 rounded-xl text-xs mb-3">
+                            Aplikasi sudah terkonfigurasi secara global oleh admin. Anda bisa langsung menghubungkan akun tanpa mengisi form ini. Isi form ini hanya jika Anda ingin menimpa (override) dengan App ID Anda sendiri.
+                        </div>
+                    ) : (
+                        <div className="bg-indigo-500/10 border border-indigo-500/20 text-indigo-300 p-3 rounded-xl text-xs mb-3 space-y-1">
+                            <div>
+                                <strong>Pemberitahuan Penting & Privasi:</strong> Menginput App ID & App Secret kustom milik Anda sendiri <strong>diharuskan</strong> demi menjaga keamanan, perlindungan privasi data Anda, serta menghindari limitasi kuota API bersama.
+                            </div>
+                            {platform.id === 'instagram' && (
+                                <div className="text-slate-400">
+                                    *(Gunakan kredensial App ID & Secret yang sama dengan Meta/Facebook Developer Anda)
+                                </div>
+                            )}
+                        </div>
+                    )}
                     <div>
                         <label className="block text-xs font-bold text-slate-400 mb-1">{platform.name} App / Client ID</label>
                         <input 
@@ -113,7 +133,7 @@ function PlatformCard({ platform, connectedAccounts, credential, user }) {
                             type="text" 
                             value={data.app_id}
                             onChange={e => setData('app_id', e.target.value)}
-                            required
+                            required={true}
                             className="w-full bg-black/50 border border-white/10 rounded-lg px-3 py-2 text-sm text-white focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 outline-none"
                             placeholder="Masukkan ID"
                         />
@@ -126,7 +146,7 @@ function PlatformCard({ platform, connectedAccounts, credential, user }) {
                             type="password" 
                             value={data.app_secret}
                             onChange={e => setData('app_secret', e.target.value)}
-                            required
+                            required={true}
                             className="w-full bg-black/50 border border-white/10 rounded-lg px-3 py-2 text-sm text-white focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 outline-none"
                             placeholder="Masukkan Secret"
                         />

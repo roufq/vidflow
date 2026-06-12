@@ -105,6 +105,114 @@ Route::get('/terms', function () {
 HTML;
 });
 
+Route::get('/video-stream/{job}', function (\App\Models\UploadJob $job) {
+    if (! request()->hasValidSignature()) {
+        abort(401, 'Invalid or expired signature.');
+    }
+
+    $localDisk = \Illuminate\Support\Facades\Storage::disk('local');
+    $cloudDiskName = env('CLOUD_FILESYSTEM_DISK', 'google');
+    
+    // Tentukan disk mana yang menyimpan file video saat ini
+    if ($localDisk->exists($job->file_path)) {
+        $diskInstance = $localDisk;
+        $fileSize = $localDisk->size($job->file_path);
+    } else {
+        // Fallback ke Cloud Storage jika file lokal sudah dipindahkan & dihapus
+        $diskInstance = \Illuminate\Support\Facades\Storage::disk($cloudDiskName);
+        if (!$diskInstance->exists($job->file_path)) {
+            abort(404, 'File not found.');
+        }
+        $fileSize = $job->file_size_bytes;
+    }
+
+    $headers = [
+        'Content-Type' => 'video/mp4',
+        'Accept-Ranges' => 'bytes',
+        'Content-Disposition' => 'inline; filename="' . basename($job->file_path) . '"',
+    ];
+
+    $range = request()->header('Range');
+    if ($range) {
+        // Format range: bytes=start-end
+        if (preg_match('/bytes=\s*(\d+)-(\d*)/i', $range, $matches)) {
+            $start = intval($matches[1]);
+            $end = $matches[2] !== '' ? intval($matches[2]) : $fileSize - 1;
+            
+            if ($start >= $fileSize || $end >= $fileSize || $start > $end) {
+                return response('Invalid Range', 416, [
+                    'Content-Range' => "bytes */{$fileSize}",
+                    'Accept-Ranges' => 'bytes',
+                ]);
+            }
+
+            $length = $end - $start + 1;
+            
+            $stream = $diskInstance->readStream($job->file_path);
+            if (!$stream) {
+                abort(500, 'Could not open video stream.');
+            }
+
+            return response()->stream(function () use ($stream, $start, $length) {
+                // Pindah posisi baca byte (seeking)
+                $meta = stream_get_meta_data($stream);
+                $seekable = $meta['seekable'] ?? false;
+                
+                if ($seekable) {
+                    fseek($stream, $start);
+                } else {
+                    // Manual skip byte jika stream dari cloud storage tidak mendukung seeking
+                    $discarded = 0;
+                    while ($discarded < $start && !feof($stream)) {
+                        $toRead = min(8192, $start - $discarded);
+                        $data = fread($stream, $toRead);
+                        if ($data === false || $data === '') {
+                            break;
+                        }
+                        $discarded += strlen($data);
+                    }
+                }
+
+                $chunkSize = 8192; // Buffer 8KB
+                $bytesRemaining = $length;
+                
+                while ($bytesRemaining > 0 && !feof($stream)) {
+                    $readSize = min($chunkSize, $bytesRemaining);
+                    $data = fread($stream, $readSize);
+                    if ($data === false || $data === '') {
+                        break;
+                    }
+                    echo $data;
+                    flush();
+                    $bytesRemaining -= strlen($data);
+                }
+                
+                if (is_resource($stream)) {
+                    fclose($stream);
+                }
+            }, 206, array_merge($headers, [
+                'Content-Length' => $length,
+                'Content-Range' => "bytes {$start}-{$end}/{$fileSize}"
+            ]));
+        }
+    }
+
+    // Default: Response penuh 200 OK
+    $stream = $diskInstance->readStream($job->file_path);
+    if (!$stream) {
+        abort(500, 'Could not open video stream.');
+    }
+
+    return response()->stream(function () use ($stream) {
+        fpassthru($stream);
+        if (is_resource($stream)) {
+            fclose($stream);
+        }
+    }, 200, array_merge($headers, [
+        'Content-Length' => $fileSize
+    ]));
+})->name('video.stream');
+
 Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/dashboard', function () {
         $connections = \App\Models\PlatformConnection::where('user_id', auth()->id())->get()->groupBy('platform');
@@ -254,7 +362,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
         }
 
         return redirect()->back()->with('success', 'Sinkronisasi analitik selesai ditarik dari platform (YouTube/Meta/TikTok)!');
-    })->name('analytics.sync');
+    })->name('analytics.sync')->middleware('throttle:5,1');
 
     // ROUTE SEMENTARA UNTUK RESET DATA DUMMY
     Route::get('/analytics/reset-dummy-data', function () {
@@ -288,7 +396,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::delete('/auth/connection/{id}', [PlatformConnectionController::class, 'disconnect'])->name('platform.disconnect');
 
     // Upload Video
-    Route::post('/uploads', [UploadController::class, 'store'])->name('uploads.store');
+    Route::post('/uploads', [UploadController::class, 'store'])->name('uploads.store')->middleware('throttle:10,1');
 
     // Profile
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
@@ -322,7 +430,7 @@ Route::match(['get', 'post'], '/webhooks/{platform}', [WebhookController::class,
 // Contoh url: https://domain-infinityfree-anda.com/system/run-worker?key=vidflow_secret_123
 // =========================================================================
 Route::get('/system/run-worker', function (\Illuminate\Http\Request $request) {
-    if ($request->query('key') !== 'vidflow_secret_123') {
+    if ($request->query('key') !== env('SYSTEM_SECRET_KEY', 'vidflow_secret_123')) {
         abort(403, 'Unauthorized Access');
     }
 
@@ -344,7 +452,7 @@ Route::get('/system/run-worker', function (\Illuminate\Http\Request $request) {
 });
 
 Route::get('/system/reset-queue', function (\Illuminate\Http\Request $request) {
-    if ($request->query('key') !== 'vidflow_secret_123') {
+    if ($request->query('key') !== env('SYSTEM_SECRET_KEY', 'vidflow_secret_123')) {
         abort(403, 'Unauthorized Access');
     }
 
@@ -409,7 +517,7 @@ Route::get('/system/check-token', function () {
 });
 
 Route::get('/system/clear-cache', function (\Illuminate\Http\Request $request) {
-    if ($request->query('key') !== 'vidflow_secret_123') {
+    if ($request->query('key') !== env('SYSTEM_SECRET_KEY', 'vidflow_secret_123')) {
         abort(403, 'Unauthorized Access');
     }
 
