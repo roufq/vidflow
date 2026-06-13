@@ -25,6 +25,7 @@ Route::get('/privacy', function () {
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <title>Privacy Policy - VidFlow</title>
+        <link rel="icon" type="image/png" href="/vidflow-icon.png">
         <style>
             body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; line-height: 1.6; color: #333; max-width: 800px; margin: 0 auto; padding: 2rem; }
             h1 { color: #111; border-bottom: 1px solid #eee; padding-bottom: 0.5rem; }
@@ -33,7 +34,10 @@ Route::get('/privacy', function () {
         </style>
     </head>
     <body>
-        <h1>VidFlow Privacy Policy</h1>
+        <div style="display: flex; align-items: center; border-bottom: 1px solid #eee; padding-bottom: 0.5rem; margin-bottom: 2rem;">
+            <img src="/vidflow-icon.png" alt="VidFlow Icon" style="width: 48px; height: 48px; margin-right: 15px; border-radius: 8px;">
+            <h1 style="border: none; padding: 0; margin: 0;">VidFlow Privacy Policy</h1>
+        </div>
         <p><strong>Last Updated:</strong> June 2026</p>
         
         <h2>1. Information We Collect</h2>
@@ -74,6 +78,7 @@ Route::get('/terms', function () {
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <title>Terms of Service - VidFlow</title>
+        <link rel="icon" type="image/png" href="/vidflow-icon.png">
         <style>
             body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; line-height: 1.6; color: #333; max-width: 800px; margin: 0 auto; padding: 2rem; }
             h1 { color: #111; border-bottom: 1px solid #eee; padding-bottom: 0.5rem; }
@@ -82,7 +87,10 @@ Route::get('/terms', function () {
         </style>
     </head>
     <body>
-        <h1>VidFlow Terms of Service</h1>
+        <div style="display: flex; align-items: center; border-bottom: 1px solid #eee; padding-bottom: 0.5rem; margin-bottom: 2rem;">
+            <img src="/vidflow-icon.png" alt="VidFlow Icon" style="width: 48px; height: 48px; margin-right: 15px; border-radius: 8px;">
+            <h1 style="border: none; padding: 0; margin: 0;">VidFlow Terms of Service</h1>
+        </div>
         <p><strong>Last Updated:</strong> June 2026</p>
         <p>Welcome to VidFlow. By using our service, you agree to these terms. VidFlow is a video management and scheduling dashboard designed to help users upload content to various social media platforms.</p>
         <h2>1. User Responsibilities</h2>
