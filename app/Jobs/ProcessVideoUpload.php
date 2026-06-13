@@ -455,9 +455,9 @@ class ProcessVideoUpload implements ShouldQueue
             try {
                 $user = \App\Models\User::find($job->user_id);
                 if ($user) {
-                    Mail::to($user->email)->send(new VideoStatusNotification($this->platformUpload));
+                    $user->notify(new VideoStatusNotification($this->platformUpload));
                 }
-            } catch (\Exception $e) {
+            } catch (\Throwable $e) {
                 Log::warning("Gagal mengirim email notifikasi sukses: " . $e->getMessage());
             }
 
