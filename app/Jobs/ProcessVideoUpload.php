@@ -13,6 +13,7 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\Storage;
 use App\Notifications\VideoStatusNotification;
+use Illuminate\Support\Facades\Mail;
 
 class ProcessVideoUpload implements ShouldQueue
 {
@@ -112,6 +113,9 @@ class ProcessVideoUpload implements ShouldQueue
                 if ($client->isAccessTokenExpired()) {
                     if ($connection->refresh_token) {
                         $newTokens = $client->fetchAccessTokenWithRefreshToken();
+                        if (isset($newTokens['error'])) {
+                            throw new \Exception('Failed to refresh YouTube token: ' . json_encode($newTokens));
+                        }
                         $connection->update([
                             'access_token' => Crypt::encryptString($newTokens['access_token']),
                             'token_expires_at' => now()->addSeconds($newTokens['expires_in'] ?? 3600)
@@ -451,7 +455,7 @@ class ProcessVideoUpload implements ShouldQueue
             try {
                 $user = \App\Models\User::find($job->user_id);
                 if ($user) {
-                    Mail::to($user->email)->send(new UploadStatusNotification($this->platformUpload));
+                    Mail::to($user->email)->send(new VideoStatusNotification($this->platformUpload));
                 }
             } catch (\Exception $e) {
                 Log::warning("Gagal mengirim email notifikasi sukses: " . $e->getMessage());
