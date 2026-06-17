@@ -349,6 +349,49 @@ Route::middleware(['auth', 'verified'])->group(function () {
                         $upload->error_message = 'IG Error: No pages found for this user.';
                     }
                 } elseif ($upload->platform === 'tiktok') {
+                    // Check if token expired or about to expire
+                    if ($connection->token_expires_at && $connection->token_expires_at->subMinutes(5)->isPast()) {
+                        $credential = \App\Models\UserPlatformCredential::where('user_id', $connection->user_id)
+                            ->where('platform', 'tiktok')
+                            ->first();
+
+                        if ($credential) {
+                            $clientKey = $credential->app_id;
+                            $clientSecret = $credential->app_secret;
+                        } else {
+                            $clientKey = config('services.tiktok.client_id');
+                            $clientSecret = config('services.tiktok.client_secret');
+                        }
+
+                        if (!empty($clientKey) && !empty($clientSecret) && $connection->refresh_token) {
+                            try {
+                                $refreshToken = \Illuminate\Support\Facades\Crypt::decryptString($connection->refresh_token);
+
+                                $refreshResponse = \Illuminate\Support\Facades\Http::asForm()
+                                    ->post('https://open.tiktokapis.com/v2/oauth/token/', [
+                                        'client_key' => $clientKey,
+                                        'client_secret' => $clientSecret,
+                                        'grant_type' => 'refresh_token',
+                                        'refresh_token' => $refreshToken,
+                                    ]);
+
+                                if ($refreshResponse->successful()) {
+                                    $responseData = $refreshResponse->json();
+                                    if (!empty($responseData['access_token'])) {
+                                        $connection->update([
+                                            'access_token' => \Illuminate\Support\Facades\Crypt::encryptString($responseData['access_token']),
+                                            'refresh_token' => !empty($responseData['refresh_token']) ? \Illuminate\Support\Facades\Crypt::encryptString($responseData['refresh_token']) : $connection->refresh_token,
+                                            'token_expires_at' => now()->addSeconds($responseData['expires_in'] ?? 86400),
+                                        ]);
+                                        $accessToken = $responseData['access_token'];
+                                    }
+                                }
+                            } catch (\Exception $refreshEx) {
+                                \Illuminate\Support\Facades\Log::error('TikTok token refresh during sync failed: ' . $refreshEx->getMessage());
+                            }
+                        }
+                    }
+
                     $response = \Illuminate\Support\Facades\Http::withToken($accessToken)
                         ->post('https://open.tiktokapis.com/v2/video/query/?fields=view_count,like_count', [
                             'filters' => ['video_ids' => [$upload->platform_video_id]]

@@ -384,59 +384,150 @@ class ProcessVideoUpload implements ShouldQueue
                 // =====================================================================
                 // ACTUAL API LOGIC FOR TIKTOK
                 // =====================================================================
-                $this->platformUpload->update(['progress_percent' => 40]);
                 
-                // 1. Inisialisasi Upload ke TikTok API v2
-                $initResponse = \Illuminate\Support\Facades\Http::withToken($token)
-                    ->post('https://open.tiktokapis.com/v2/post/publish/video/init/', [
-                        'post_info' => [
-                            'title' => $job->title,
-                            'privacy_level' => 'SELF_ONLY', // Wajib SELF_ONLY selama aplikasi masih berstatus Sandbox/Draft
-                            'disable_duet' => false,
-                            'disable_comment' => false,
-                            'disable_stitch' => false
-                        ],
-                        'source_info' => [
-                            'source' => 'FILE_UPLOAD',
-                            'video_size' => $job->file_size_bytes,
-                            'chunk_size' => $job->file_size_bytes,
-                            'total_chunk_count' => 1
-                        ]
+                // 1. Cek & Refresh Access Token jika kadaluarsa
+                if ($connection->token_expires_at && $connection->token_expires_at->subMinutes(5)->isPast()) {
+                    $credential = \App\Models\UserPlatformCredential::where('user_id', $job->user_id)
+                        ->where('platform', 'tiktok')
+                        ->first();
+
+                    if ($credential) {
+                        $clientKey = $credential->app_id;
+                        $clientSecret = $credential->app_secret;
+                    } else {
+                        $clientKey = config('services.tiktok.client_id');
+                        $clientSecret = config('services.tiktok.client_secret');
+                    }
+
+                    if (empty($clientKey) || empty($clientSecret)) {
+                        throw new \Exception("Kredensial API TikTok (Client Key / Secret) tidak terkonfigurasi.");
+                    }
+
+                    if (!$connection->refresh_token) {
+                        throw new \Exception("Token TikTok kadaluarsa dan tidak ada Refresh Token. Silakan hubungkan ulang akun Anda.");
+                    }
+                    $refreshToken = Crypt::decryptString($connection->refresh_token);
+
+                    $refreshResponse = \Illuminate\Support\Facades\Http::asForm()
+                        ->post('https://open.tiktokapis.com/v2/oauth/token/', [
+                            'client_key' => $clientKey,
+                            'client_secret' => $clientSecret,
+                            'grant_type' => 'refresh_token',
+                            'refresh_token' => $refreshToken,
+                        ]);
+
+                    if ($refreshResponse->failed()) {
+                        throw new \Exception("Gagal me-refresh token TikTok: " . $refreshResponse->body());
+                    }
+
+                    $responseData = $refreshResponse->json();
+                    
+                    if (empty($responseData['access_token'])) {
+                        throw new \Exception("Respon refresh token TikTok tidak valid: " . json_encode($responseData));
+                    }
+
+                    $connection->update([
+                        'access_token' => Crypt::encryptString($responseData['access_token']),
+                        'refresh_token' => !empty($responseData['refresh_token']) ? Crypt::encryptString($responseData['refresh_token']) : $connection->refresh_token,
+                        'token_expires_at' => now()->addSeconds($responseData['expires_in'] ?? 86400),
                     ]);
 
-                if ($initResponse->failed()) {
-                    throw new \Exception('TikTok Init API Error: ' . $initResponse->body());
+                    $token = $responseData['access_token'];
                 }
 
-                $this->platformUpload->update(['progress_percent' => 60]);
+                $publishId = $this->platformUpload->platform_video_id;
+
+                if (!$publishId) {
+                    $this->platformUpload->update(['progress_percent' => 40]);
+                    
+                    // 2. Inisialisasi Upload ke TikTok API v2
+                    $initResponse = \Illuminate\Support\Facades\Http::withToken($token)
+                        ->post('https://open.tiktokapis.com/v2/post/publish/video/init/', [
+                            'post_info' => [
+                                'title' => $job->title,
+                                'privacy_level' => 'SELF_ONLY', // Wajib SELF_ONLY selama aplikasi masih berstatus Sandbox/Draft
+                                'disable_duet' => false,
+                                'disable_comment' => false,
+                                'disable_stitch' => false
+                            ],
+                            'source_info' => [
+                                'source' => 'FILE_UPLOAD',
+                                'video_size' => $job->file_size_bytes,
+                                'chunk_size' => $job->file_size_bytes,
+                                'total_chunk_count' => 1
+                            ]
+                        ]);
+
+                    if ($initResponse->failed()) {
+                        throw new \Exception('TikTok Init API Error: ' . $initResponse->body());
+                    }
+
+                    $this->platformUpload->update(['progress_percent' => 60]);
+                    
+                    $uploadUrl = $initResponse->json('data.upload_url');
+                    $publishId = $initResponse->json('data.publish_id');
+
+                    if (!$uploadUrl || !$publishId) {
+                        throw new \Exception('Gagal mendapatkan upload_url atau publish_id dari TikTok.');
+                    }
+
+                    // 3. Upload Binary File Video ke URL yang diberikan TikTok
+                    $readStream = Storage::disk($disk)->readStream($job->file_path);
+                    if (!$readStream) {
+                        throw new \Exception("Gagal membuka stream file video untuk TikTok.");
+                    }
+                    
+                    $uploadResponse = \Illuminate\Support\Facades\Http::timeout(3600)
+                        ->withHeaders([
+                            'Content-Range' => 'bytes 0-' . ($job->file_size_bytes - 1) . '/' . $job->file_size_bytes,
+                        ])
+                        ->withBody($readStream, 'video/mp4')
+                        ->put($uploadUrl);
+
+                    if (is_resource($readStream)) {
+                        fclose($readStream);
+                    }
+
+                    if ($uploadResponse->failed()) {
+                        throw new \Exception('TikTok Video Upload Error (Status ' . $uploadResponse->status() . '): ' . $uploadResponse->body());
+                    }
+
+                    $this->platformUpload->update([
+                        'platform_video_id' => $publishId,
+                        'progress_percent' => 80
+                    ]);
+                }
+
+                // 4. Polling Status Publish TikTok
+                $statusResponse = \Illuminate\Support\Facades\Http::withToken($token)
+                    ->post('https://open.tiktokapis.com/v2/post/publish/status/fetch/', [
+                        'publish_id' => $publishId
+                    ]);
+
+                if ($statusResponse->failed()) {
+                    throw new \Exception('TikTok Fetch Status API Error: ' . $statusResponse->body());
+                }
+
+                $statusData = $statusResponse->json('data');
+                $publishStatus = $statusData['status'] ?? null;
+
+                if ($publishStatus !== 'PUBLISH_COMPLETE' && $publishStatus !== 'SEND_TO_USER_INBOX') {
+                    if ($publishStatus === 'FAILED') {
+                        throw new \Exception('TikTok Upload Failed: ' . ($statusData['fail_reason'] ?? 'Unknown reason'));
+                    }
+
+                    // Masih diproses, antrekan kembali
+                    $this->release(30);
+                    return;
+                }
+
+                $finalVideoId = null;
+                if (!empty($statusData['publicaly_available_post_id'])) {
+                    $finalVideoId = $statusData['publicaly_available_post_id'][0];
+                } else {
+                    $finalVideoId = $publishId;
+                }
                 
-                $uploadUrl = $initResponse->json('data.upload_url');
-                $publishId = $initResponse->json('data.publish_id');
-
-                // 2. Upload Binary File Video ke URL yang diberikan TikTok
-                $readStream = Storage::disk($disk)->readStream($job->file_path);
-                if (!$readStream) {
-                    throw new \Exception("Gagal membuka stream file video untuk TikTok.");
-                }
-                
-                $uploadResponse = \Illuminate\Support\Facades\Http::timeout(3600)
-                    ->withHeaders([
-                        'Content-Range' => 'bytes 0-' . ($job->file_size_bytes - 1) . '/' . $job->file_size_bytes,
-                    ])
-                    ->withBody($readStream, 'video/mp4')
-                    ->put($uploadUrl);
-
-                if (is_resource($readStream)) {
-                    fclose($readStream);
-                }
-
-                if ($uploadResponse->failed()) {
-                    throw new \Exception('TikTok Video Upload Error (Status ' . $uploadResponse->status() . '): ' . $uploadResponse->body());
-                }
-
-                $this->platformUpload->update(['progress_percent' => 90]);
-                
-                $finalVideoId = $publishId;
                 $finalUrl = 'https://tiktok.com/@me/video/' . $finalVideoId;
             }
 

@@ -88,16 +88,14 @@ function PlatformCard({ platform, connectedAccounts, credential, hasGlobal, user
                     )}
                 </div>
                 <div className="shrink-0 flex items-center gap-2">
-                    {platform.id !== 'tiktok' && (
-                        <button 
-                            type="button"
-                            onClick={() => setShowSettings(!showSettings)}
-                            className={`px-3 py-2.5 rounded-xl text-sm font-bold transition-all border ${showSettings ? 'bg-indigo-500/20 text-indigo-300 border-indigo-500/30' : 'text-slate-300 bg-white/5 hover:bg-white/10 border-white/10'}`}
-                            title={`Pengaturan API ${platform.name}`}
-                        >
-                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
-                        </button>
-                    )}
+                    <button 
+                        type="button"
+                        onClick={() => setShowSettings(!showSettings)}
+                        className={`px-3 py-2.5 rounded-xl text-sm font-bold transition-all border ${showSettings ? 'bg-indigo-500/20 text-indigo-300 border-indigo-500/30' : 'text-slate-300 bg-white/5 hover:bg-white/10 border-white/10'}`}
+                        title={`Pengaturan API ${platform.name}`}
+                    >
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+                    </button>
                     
                     <a 
                         href={route('platform.redirect', platform.id)}
@@ -108,7 +106,7 @@ function PlatformCard({ platform, connectedAccounts, credential, hasGlobal, user
                 </div>
             </div>
 
-            {showSettings && platform.id !== 'tiktok' && (
+            {showSettings && (
                 <form onSubmit={submit} className="mt-4 pt-4 border-t border-white/5 space-y-4">
                     {hasGlobal ? (
                         <div className="bg-emerald-500/10 border border-emerald-500/20 text-emerald-300 p-3 rounded-xl text-xs mb-3">
@@ -156,7 +154,7 @@ function PlatformCard({ platform, connectedAccounts, credential, hasGlobal, user
                         <label className="block text-xs font-bold text-slate-400 mb-2">OAuth Redirect / Callback URI:</label>
                         <div className="flex items-center gap-2">
                             <code className="flex-1 bg-black/60 text-indigo-400 px-3 py-2 rounded-lg border border-indigo-500/20 select-all font-mono text-xs shadow-inner">
-                                {window.location.origin}/auth/{platform.id}/callback
+                                {platform.id === 'tiktok' ? `${window.location.origin}/auth/tt/callback` : `${window.location.origin}/auth/${platform.id}/callback`}
                             </code>
                         </div>
                         <p className="text-[10px] text-slate-500 mt-1.5 leading-tight">

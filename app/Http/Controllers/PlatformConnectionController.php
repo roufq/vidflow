@@ -55,7 +55,17 @@ class PlatformConnectionController extends Controller
         // Pengecualian spesial untuk TikTok: Gunakan Master Credentials dari .env
         // dan gunakan URI samaran agar terhindar dari pemblokiran kata "tiktok"
         if ($platform === 'tiktok') {
-            Config::set("services.{$driverName}.redirect", route('tt.callback.override'));
+            $credential = UserPlatformCredential::where('user_id', auth()->id())
+                ->where('platform', 'tiktok')
+                ->first();
+
+            if ($credential) {
+                Config::set("services.tiktok.client_id", $credential->app_id);
+                Config::set("services.tiktok.client_secret", $credential->app_secret);
+            } elseif (empty(config('services.tiktok.client_id')) || empty(config('services.tiktok.client_secret'))) {
+                abort(403, 'Demi alasan privasi dan perizinan API, Anda DIHARUSKAN mengatur App ID / Client ID dan Secret untuk TikTok Anda sendiri di menu pengaturan akun sebelum menghubungkan.');
+            }
+            Config::set("services.tiktok.redirect", route('tt.callback.override'));
             return $driverName;
         }
 
