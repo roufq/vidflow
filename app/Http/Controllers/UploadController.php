@@ -68,7 +68,13 @@ class UploadController extends Controller
             'status' => 'pending',
         ]);
 
-        $connections = \App\Models\PlatformConnection::whereIn('id', $validated['selected_connections'])->get();
+        $connections = \App\Models\PlatformConnection::whereIn('id', $validated['selected_connections'])
+            ->where('user_id', auth()->id())
+            ->get();
+            
+        if ($connections->isEmpty()) {
+            return redirect()->back()->with('error', 'Koneksi platform tidak valid atau Anda tidak memiliki akses ke akun tersebut.');
+        }
 
         foreach ($connections as $conn) {
             $platformUpload = PlatformUpload::create([
