@@ -104,6 +104,7 @@ class PlatformConnectionController extends Controller
                 'pages_manage_posts',       
                 'instagram_basic',          
                 'instagram_content_publish',
+                'instagram_manage_insights',
                 'business_management'
             ])->with(['auth_type' => 'rerequest']);
             $driver->redirectUrl(route('platform.callback', ['platform' => $platform]));
@@ -130,6 +131,7 @@ class PlatformConnectionController extends Controller
                     'pages_manage_posts',       
                     'instagram_basic',          
                     'instagram_content_publish',
+                    'instagram_manage_insights',
                     'business_management'
                 ])->with(['auth_type' => 'rerequest']);
             }
