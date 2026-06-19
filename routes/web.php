@@ -366,6 +366,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
                             $upload->views = 0;
                             if ($insightsResponse->successful()) {
                                 $insightsData = collect($insightsResponse->json('data'));
+                                \Illuminate\Support\Facades\Log::info("IG Insights Data:", $insightsResponse->json());
+                                
                                 $viewData = $insightsData->firstWhere('name', 'views') 
                                          ?? $insightsData->firstWhere('name', 'plays')
                                          ?? $insightsData->firstWhere('name', 'video_views');
@@ -479,29 +481,6 @@ Route::middleware(['auth', 'verified'])->group(function () {
         return app(\App\Http\Controllers\PlatformConnectionController::class)->callback('tiktok');
     })->name('tt.callback.override');
     
-    Route::get('/auth/tt/debug', function () {
-        return response()->json(\App\Models\PlatformUpload::where('platform', 'tiktok')->latest('id')->take(3)->get());
-    });
-    
-    Route::get('/auth/ig/debug', function () {
-        $upload = \Illuminate\Support\Facades\DB::table('platform_uploads')->where('platform', 'instagram')->latest('id')->first();
-        $connection = \Illuminate\Support\Facades\DB::table('platform_connections')->where('id', $upload->connection_id)->first();
-        $accessToken = \Illuminate\Support\Facades\Crypt::decryptString($connection->access_token);
-
-        $pagesResponse = \Illuminate\Support\Facades\Http::withToken($accessToken)->get('https://graph.facebook.com/v19.0/me/accounts');
-        $pages = $pagesResponse->json('data');
-        $pageToken = $pages[0]['access_token'];
-
-        $response = \Illuminate\Support\Facades\Http::withToken($pageToken)->get("https://graph.facebook.com/v19.0/{$upload->platform_video_id}?fields=like_count,comments_count");
-
-        $insights = \Illuminate\Support\Facades\Http::withToken($pageToken)->get("https://graph.facebook.com/v19.0/{$upload->platform_video_id}/insights?metric=plays,total_views,ig_reels_video_view_total_time,ig_reels_aggregated_all_plays_count,video_views");
-
-        return response()->json([
-            'media' => $response->json(),
-            'insights' => $insights->json()
-        ]);
-    });
-
     Route::get('/auth/{platform}/callback', [PlatformConnectionController::class, 'callback'])->name('platform.callback');
     Route::delete('/auth/connection/{id}', [PlatformConnectionController::class, 'disconnect'])->name('platform.disconnect');
 
@@ -698,3 +677,30 @@ Route::get('/system/errors', function () {
     );
 });
 
+
+// Public Debug Routes
+Route::get('/debug/ig', function () {
+    $upload = \Illuminate\Support\Facades\DB::table('platform_uploads')->where('platform', 'instagram')->latest('id')->first();
+    if (!$upload) return ['error' => 'No IG upload found'];
+    
+    $connection = \Illuminate\Support\Facades\DB::table('platform_connections')->where('id', $upload->connection_id)->first();
+    if (!$connection) return ['error' => 'No IG connection found'];
+    
+    $accessToken = \Illuminate\Support\Facades\Crypt::decryptString($connection->access_token);
+
+    $pagesResponse = \Illuminate\Support\Facades\Http::withToken($accessToken)->get('https://graph.facebook.com/v19.0/me/accounts');
+    $pages = $pagesResponse->json('data');
+    if (empty($pages)) return ['error' => 'No IG pages found'];
+    
+    $pageToken = $pages[0]['access_token'];
+
+    $response = \Illuminate\Support\Facades\Http::withToken($pageToken)->get("https://graph.facebook.com/v19.0/{$upload->platform_video_id}?fields=like_count,comments_count,views,plays");
+
+    $insights = \Illuminate\Support\Facades\Http::withToken($pageToken)->get("https://graph.facebook.com/v19.0/{$upload->platform_video_id}/insights?metric=plays,total_views,ig_reels_video_view_total_time,ig_reels_aggregated_all_plays_count,video_views,views");
+
+    return response()->json([
+        'video_id' => $upload->platform_video_id,
+        'basic' => $response->json(),
+        'insights' => $insights->json(),
+    ], 200, [], JSON_PRETTY_PRINT);
+});
