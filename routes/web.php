@@ -442,6 +442,10 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/auth/tt/callback', function () {
         return app(\App\Http\Controllers\PlatformConnectionController::class)->callback('tiktok');
     })->name('tt.callback.override');
+    
+    Route::get('/auth/tt/debug', function () {
+        return response()->json(\App\Models\PlatformUpload::where('platform', 'tiktok')->latest('id')->take(3)->get());
+    });
 
     Route::get('/auth/{platform}/callback', [PlatformConnectionController::class, 'callback'])->name('platform.callback');
     Route::delete('/auth/connection/{id}', [PlatformConnectionController::class, 'disconnect'])->name('platform.disconnect');
