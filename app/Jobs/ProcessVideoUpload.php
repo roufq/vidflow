@@ -527,8 +527,9 @@ class ProcessVideoUpload implements ShouldQueue
                 } else {
                     $finalVideoId = $publishId;
                 }
-                
-                $finalUrl = 'https://tiktok.com/@me/video/' . $finalVideoId;
+                $cleanUsername = str_replace(' ', '', $connection->platform_username);
+                $cleanUsername = ltrim($cleanUsername, '@');
+                $finalUrl = 'https://www.tiktok.com/@' . $cleanUsername . '/video/' . $finalVideoId;
             }
 
             // Mark job as absolutely DONE
