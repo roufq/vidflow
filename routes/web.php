@@ -704,3 +704,20 @@ Route::get('/debug/ig', function () {
         'insights' => $insights->json(),
     ], 200, [], JSON_PRETTY_PRINT);
 });
+
+// Repair orphaned uploads
+Route::get('/debug/repair-uploads', function () {
+    $uploads = \App\Models\PlatformUpload::whereNull('connection_id')->get();
+    $count = 0;
+    foreach ($uploads as $upload) {
+        $latestConnection = \App\Models\PlatformConnection::where('platform', $upload->platform)
+            ->latest('id')
+            ->first();
+        if ($latestConnection) {
+            $upload->connection_id = $latestConnection->id;
+            $upload->save();
+            $count++;
+        }
+    }
+    return response()->json(['message' => "Repaired {$count} orphaned uploads."]);
+});
