@@ -348,10 +348,13 @@ Route::middleware(['auth', 'verified'])->group(function () {
                             $upload->likes = isset($stats['like_count']) ? $stats['like_count'] : 0;
                             
                             if ($insightsResponse->successful()) {
-                                $viewData = collect($insightsResponse->json('data'))->firstWhere('name', 'plays');
+                                $viewData = collect($insightsResponse->json('data'))->firstWhere('name', 'plays') 
+                                            ?? collect($insightsResponse->json('data'))->firstWhere('name', 'total_views');
                                 $upload->views = isset($viewData['values'][0]['value']) ? $viewData['values'][0]['value'] : 0;
+                                \Illuminate\Support\Facades\Log::info("IG Insights: " . json_encode($insightsResponse->json()));
                             } else {
                                 $upload->views = 0;
+                                \Illuminate\Support\Facades\Log::error("IG Insights Error: " . $insightsResponse->body());
                             }
                             
                             $upload->error_message = null;
@@ -458,6 +461,25 @@ Route::middleware(['auth', 'verified'])->group(function () {
     
     Route::get('/auth/tt/debug', function () {
         return response()->json(\App\Models\PlatformUpload::where('platform', 'tiktok')->latest('id')->take(3)->get());
+    });
+    
+    Route::get('/auth/ig/debug', function () {
+        $upload = \Illuminate\Support\Facades\DB::table('platform_uploads')->where('platform', 'instagram')->latest('id')->first();
+        $connection = \Illuminate\Support\Facades\DB::table('platform_connections')->where('id', $upload->connection_id)->first();
+        $accessToken = \Illuminate\Support\Facades\Crypt::decryptString($connection->access_token);
+
+        $pagesResponse = \Illuminate\Support\Facades\Http::withToken($accessToken)->get('https://graph.facebook.com/v19.0/me/accounts');
+        $pages = $pagesResponse->json('data');
+        $pageToken = $pages[0]['access_token'];
+
+        $response = \Illuminate\Support\Facades\Http::withToken($pageToken)->get("https://graph.facebook.com/v19.0/{$upload->platform_video_id}?fields=like_count,comments_count");
+
+        $insights = \Illuminate\Support\Facades\Http::withToken($pageToken)->get("https://graph.facebook.com/v19.0/{$upload->platform_video_id}/insights?metric=plays,total_views,ig_reels_video_view_total_time,ig_reels_aggregated_all_plays_count,video_views");
+
+        return response()->json([
+            'media' => $response->json(),
+            'insights' => $insights->json()
+        ]);
     });
 
     Route::get('/auth/{platform}/callback', [PlatformConnectionController::class, 'callback'])->name('platform.callback');
