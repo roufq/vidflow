@@ -442,6 +442,21 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/auth/tt/callback', function () {
         return app(\App\Http\Controllers\PlatformConnectionController::class)->callback('tiktok');
     })->name('tt.callback.override');
+    
+    // DEBUG: Route untuk mengecek URL redirect TikTok
+    Route::get('/auth/tt/debug', function () {
+        $platform = 'tiktok';
+        $controller = app(\App\Http\Controllers\PlatformConnectionController::class);
+        $method = new ReflectionMethod($controller, 'setDynamicConfig');
+        $method->setAccessible(true);
+        $driverName = $method->invoke($controller, $platform);
+        $url = \Laravel\Socialite\Facades\Socialite::driver($driverName)->stateless()->redirect()->getTargetUrl();
+        return response()->json([
+            'generated_url' => $url,
+            'redirect_uri_in_config' => config("services.tiktok.redirect"),
+            'client_key_in_config' => config("services.tiktok.client_id")
+        ]);
+    });
 
     Route::get('/auth/{platform}/callback', [PlatformConnectionController::class, 'callback'])->name('platform.callback');
     Route::delete('/auth/connection/{id}', [PlatformConnectionController::class, 'disconnect'])->name('platform.disconnect');
