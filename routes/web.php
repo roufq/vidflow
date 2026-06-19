@@ -264,7 +264,10 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('/analytics/sync', function () {
         $uploads = \App\Models\PlatformUpload::whereHas('uploadJob', function($q) {
             $q->where('user_id', auth()->id());
-        })->whereNotNull('platform_video_id')->get();
+        })->whereNotNull('platform_video_id')
+          ->latest('id')
+          ->take(15)
+          ->get();
         
         // This is the manual sync logic. 
         // In a full production environment, this iterates through $uploads and queries:
