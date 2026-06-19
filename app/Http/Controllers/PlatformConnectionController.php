@@ -138,7 +138,7 @@ class PlatformConnectionController extends Controller
             
             $socialUser = $driver->user();
 
-            PlatformConnection::updateOrCreate(
+            $connection = PlatformConnection::updateOrCreate(
                 [
                     'user_id' => auth()->id(), 
                     'platform' => $platform,
@@ -151,6 +151,14 @@ class PlatformConnectionController extends Controller
                     'token_expires_at' => now()->addSeconds($socialUser->expiresIn ?? 3600),
                 ]
             );
+
+            // Otomatis mengaitkan kembali video lama yang kehilangan induknya (orphaned)
+            \App\Models\PlatformUpload::whereNull('connection_id')
+                ->where('platform', $platform)
+                ->whereHas('uploadJob', function($q) {
+                    $q->where('user_id', auth()->id());
+                })
+                ->update(['connection_id' => $connection->id]);
 
             return redirect()->route('connections')->with('success', 'Berhasil menghubungkan akun ' . ucfirst($platform));
             
