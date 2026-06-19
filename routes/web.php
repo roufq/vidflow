@@ -336,11 +336,24 @@ Route::middleware(['auth', 'verified'])->group(function () {
                             ->get("https://graph.facebook.com/v19.0/{$upload->platform_video_id}", [
                                 'fields' => 'like_count,comments_count'
                             ]);
+                            
+                        // Ambil insights untuk view count
+                        $insightsResponse = \Illuminate\Support\Facades\Http::withToken($pageToken)
+                            ->get("https://graph.facebook.com/v19.0/{$upload->platform_video_id}/insights", [
+                                'metric' => 'plays' // Untuk Reels/Video IG, metrik utamanya adalah plays
+                            ]);
                         
                         if ($response->successful()) {
                             $stats = $response->json();
                             $upload->likes = isset($stats['like_count']) ? $stats['like_count'] : 0;
-                            $upload->views = isset($stats['view_count']) ? $stats['view_count'] : 0;
+                            
+                            if ($insightsResponse->successful()) {
+                                $viewData = collect($insightsResponse->json('data'))->firstWhere('name', 'plays');
+                                $upload->views = isset($viewData['values'][0]['value']) ? $viewData['values'][0]['value'] : 0;
+                            } else {
+                                $upload->views = 0;
+                            }
+                            
                             $upload->error_message = null;
                         } else {
                             $upload->error_message = 'IG API Error: ' . $response->json('error.message', 'Unknown error');
