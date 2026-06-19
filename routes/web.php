@@ -337,24 +337,44 @@ Route::middleware(['auth', 'verified'])->group(function () {
                                 'fields' => 'like_count,comments_count'
                             ]);
                             
-                        // Ambil insights untuk view count
+                        // Ambil insights untuk view count. Coba metric 'views' (standar baru Meta)
                         $insightsResponse = \Illuminate\Support\Facades\Http::withToken($pageToken)
                             ->get("https://graph.facebook.com/v19.0/{$upload->platform_video_id}/insights", [
-                                'metric' => 'plays' // Untuk Reels/Video IG, metrik utamanya adalah plays
+                                'metric' => 'views'
                             ]);
+                            
+                        if (!$insightsResponse->successful()) {
+                            // Fallback ke 'plays' jika 'views' gagal (misal API v19 belum support sepenuhnya)
+                            $insightsResponse = \Illuminate\Support\Facades\Http::withToken($pageToken)
+                                ->get("https://graph.facebook.com/v19.0/{$upload->platform_video_id}/insights", [
+                                    'metric' => 'plays'
+                                ]);
+                        }
+                        
+                        if (!$insightsResponse->successful()) {
+                            // Fallback terakhir ke 'video_views'
+                            $insightsResponse = \Illuminate\Support\Facades\Http::withToken($pageToken)
+                                ->get("https://graph.facebook.com/v19.0/{$upload->platform_video_id}/insights", [
+                                    'metric' => 'video_views'
+                                ]);
+                        }
                         
                         if ($response->successful()) {
                             $stats = $response->json();
                             $upload->likes = isset($stats['like_count']) ? $stats['like_count'] : 0;
                             
+                            $upload->views = 0;
                             if ($insightsResponse->successful()) {
-                                $viewData = collect($insightsResponse->json('data'))->firstWhere('name', 'plays') 
-                                            ?? collect($insightsResponse->json('data'))->firstWhere('name', 'total_views');
-                                $upload->views = isset($viewData['values'][0]['value']) ? $viewData['values'][0]['value'] : 0;
-                                \Illuminate\Support\Facades\Log::info("IG Insights: " . json_encode($insightsResponse->json()));
+                                $insightsData = collect($insightsResponse->json('data'));
+                                $viewData = $insightsData->firstWhere('name', 'views') 
+                                         ?? $insightsData->firstWhere('name', 'plays')
+                                         ?? $insightsData->firstWhere('name', 'video_views');
+                                         
+                                if (isset($viewData['values'][0]['value'])) {
+                                    $upload->views = $viewData['values'][0]['value'];
+                                }
                             } else {
-                                $upload->views = 0;
-                                \Illuminate\Support\Facades\Log::error("IG Insights Error: " . $insightsResponse->body());
+                                \Illuminate\Support\Facades\Log::warning("IG Insights Error: " . $insightsResponse->body());
                             }
                             
                             $upload->error_message = null;
