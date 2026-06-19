@@ -65,7 +65,7 @@ class PlatformConnectionController extends Controller
             } elseif (empty(config('services.tiktok.client_id')) || empty(config('services.tiktok.client_secret'))) {
                 abort(403, 'Demi alasan privasi dan perizinan API, Anda DIHARUSKAN mengatur App ID / Client ID dan Secret untuk TikTok Anda sendiri di menu pengaturan akun sebelum menghubungkan.');
             }
-            Config::set("services.tiktok.redirect", "https://uploadvideo.my.id/auth/tiktok/callback");
+            Config::set("services.tiktok.redirect", "https://uploadvideo.my.id/auth/tt/callback");
             return $driverName;
         }
 
