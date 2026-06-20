@@ -15,6 +15,7 @@ export default function Dashboard({ flash, connections = {} }) {
         video: null,
         thumbnail: null,
         selected_connections: [],
+        youtube_type: 'regular',
         scheduled_at: '',
     });
 
@@ -44,7 +45,7 @@ export default function Dashboard({ flash, connections = {} }) {
         post(route('uploads.store'), {
             preserveScroll: true,
             onSuccess: () => {
-                setData({ ...data, video: null, thumbnail: null, title: '', description: '', tags: '' });
+                setData({ ...data, video: null, thumbnail: null, title: '', description: '', tags: '', youtube_type: 'regular' });
                 if (fileInputRef.current) fileInputRef.current.value = '';
             }
         });
@@ -179,9 +180,6 @@ export default function Dashboard({ flash, connections = {} }) {
                                     return (
                                         <div key={platform.id} className="space-y-2">
                                             <div className="flex items-center gap-2 mb-2">
-                                                <div className={`w-6 h-6 rounded flex items-center justify-center text-white text-xs font-bold ${platform.color}`}>
-                                                    {platform.name.charAt(0)}
-                                                </div>
                                                 <span className="text-sm font-bold text-slate-300">{platform.name}</span>
                                             </div>
                                             
@@ -196,6 +194,39 @@ export default function Dashboard({ flash, connections = {} }) {
                                                     </div>
                                                 </label>
                                             ))}
+
+                                            {/* Opsi Khusus YouTube */}
+                                            {platform.id === 'youtube' && accs.some(acc => data.selected_connections.includes(acc.id)) && (
+                                                <div className="mt-3 p-4 bg-black/40 border border-[#FF0000]/30 rounded-xl animate-in fade-in zoom-in duration-300">
+                                                    <div className="flex items-center gap-2 mb-3">
+                                                        <svg className="w-4 h-4 text-[#FF0000]" fill="currentColor" viewBox="0 0 24 24"><path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/></svg>
+                                                        <p className="text-xs font-bold text-white uppercase tracking-wider">Format YouTube</p>
+                                                    </div>
+                                                    <div className="grid grid-cols-2 gap-3">
+                                                        <button 
+                                                            type="button"
+                                                            onClick={() => setData('youtube_type', 'regular')}
+                                                            className={`py-2 px-3 rounded-lg text-sm font-semibold transition-all border flex flex-col items-center justify-center gap-1 ${data.youtube_type === 'regular' ? 'bg-[#FF0000] border-[#FF0000] text-white shadow-lg shadow-[#FF0000]/20' : 'bg-[#111] border-white/10 text-slate-400 hover:border-white/30 hover:text-white'}`}
+                                                        >
+                                                            Video Panjang
+                                                            <span className={`text-[10px] font-normal ${data.youtube_type === 'regular' ? 'text-white/80' : 'text-slate-500'}`}>16:9 / &gt; 1 Menit</span>
+                                                        </button>
+                                                        <button 
+                                                            type="button"
+                                                            onClick={() => setData('youtube_type', 'short')}
+                                                            className={`py-2 px-3 rounded-lg text-sm font-semibold transition-all border flex flex-col items-center justify-center gap-1 ${data.youtube_type === 'short' ? 'bg-[#FF0000] border-[#FF0000] text-white shadow-lg shadow-[#FF0000]/20' : 'bg-[#111] border-white/10 text-slate-400 hover:border-white/30 hover:text-white'}`}
+                                                        >
+                                                            YouTube Shorts
+                                                            <span className={`text-[10px] font-normal ${data.youtube_type === 'short' ? 'text-white/80' : 'text-slate-500'}`}>9:16 / &lt; 1 Menit</span>
+                                                        </button>
+                                                    </div>
+                                                    {data.youtube_type === 'short' && (
+                                                        <p className="mt-3 text-[11px] text-slate-400 bg-white/5 p-2 rounded border border-white/5">
+                                                            <span className="text-yellow-400 font-bold">Info:</span> Tag #shorts akan ditambahkan otomatis. Pastikan video berdurasi &lt; 60 detik dan rasio vertikal.
+                                                        </p>
+                                                    )}
+                                                </div>
+                                            )}
                                         </div>
                                     );
                                 })}

@@ -36,6 +36,7 @@ class UploadController extends Controller
             'selected_connections.*' => 'required|uuid|exists:platform_connections,id',
             'scheduled_at' => 'nullable|date|after:now|before_or_equal:+' . $maxDays . ' days',
             'thumbnail' => 'nullable|image|mimes:jpeg,png,jpg|max:5120', // max 5MB
+            'youtube_type' => 'nullable|string|in:regular,short',
         ]);
 
         // Store file to local VPS transit directory
@@ -55,11 +56,21 @@ class UploadController extends Controller
             return redirect()->back()->with('error', 'Gagal menyimpan file secara lokal: ' . $e->getMessage());
         }
         $tagsArray = $validated['tags'] ? array_map('trim', explode(',', $validated['tags'])) : [];
+        
+        $finalDescription = $validated['description'] ?? '';
+        if (($validated['youtube_type'] ?? 'regular') === 'short') {
+            if (!str_contains(strtolower($finalDescription), '#shorts')) {
+                $finalDescription .= "\n\n#shorts";
+            }
+            if (!in_array('shorts', array_map('strtolower', $tagsArray))) {
+                $tagsArray[] = 'shorts';
+            }
+        }
 
         $uploadJob = UploadJob::create([
             'user_id' => auth()->id(),
             'title' => $validated['title'],
-            'description' => $validated['description'],
+            'description' => trim($finalDescription),
             'tags' => $tagsArray,
             'file_path' => $path,
             'file_size_bytes' => $request->file('video')->getSize(),
